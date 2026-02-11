@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Employee } from '@/lib/supabase';
 import VariableEntryTable from '@/components/VariableEntryTable';
-import { CreditCard, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { CreditCard, ArrowLeft, CheckCircle2, Calculator } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PagosExtrasPage() {
