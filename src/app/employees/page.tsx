@@ -10,22 +10,33 @@ export default function EmployeesPage() {
     const [employees, setEmployees] = useState<Employee[]>([
         {
             id: '1',
-            first_name: 'Juan',
-            last_name: 'Pérez',
-            dpi: '1234 56789 0101',
-            base_salary: 4500,
-            position: 'Desarrollador',
-            hiring_date: '2023-01-15',
+            first_name: 'Estuardo',
+            last_name: 'Nistal',
+            dpi: '2233 44556 0101',
+            base_salary: 8500,
+            position: 'Director Operativo',
+            hiring_date: '2021-03-10',
             company_id: 'c1',
             status: 'Activo'
         },
         {
             id: '2',
+            first_name: 'Juan',
+            last_name: 'Pérez',
+            dpi: '1122 33445 0101',
+            base_salary: 4500,
+            position: 'Analista Desarrollador',
+            hiring_date: '2023-01-15',
+            company_id: 'c1',
+            status: 'Activo'
+        },
+        {
+            id: '3',
             first_name: 'María',
             last_name: 'Gómez',
-            dpi: '9876 54321 0202',
-            base_salary: 6000,
-            position: 'Contadora',
+            dpi: '9 988 776 650 101',
+            base_salary: 6500,
+            position: 'Contadora General',
             hiring_date: '2022-06-01',
             company_id: 'c1',
             status: 'Activo'

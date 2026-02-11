@@ -19,7 +19,7 @@ export default function ReportsPage() {
         {
             Nombre: 'Estuardo Nistal',
             DPI: '2233 44556 0101',
-            Puesto: 'Director',
+            Puesto: 'Director Operativo',
             Sueldo_Base: 8500,
             Comisiones: 1200,
             Extra: 450,
@@ -31,7 +31,7 @@ export default function ReportsPage() {
         {
             Nombre: 'Juan Perez',
             DPI: '1122 33445 0101',
-            Puesto: 'Analista',
+            Puesto: 'Analista Desarrollador',
             Sueldo_Base: 4500,
             Comisiones: 0,
             Extra: 0,
@@ -42,8 +42,8 @@ export default function ReportsPage() {
         },
         {
             Nombre: 'Maria Gomez',
-            DPI: '9988 77665 0101',
-            Puesto: 'Contadora',
+            DPI: '9 988 776 650 101',
+            Puesto: 'Contadora General',
             Sueldo_Base: 6500,
             Comisiones: 500,
             Extra: 200,

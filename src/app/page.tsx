@@ -8,7 +8,8 @@ import {
     FileSpreadsheet,
     Lock,
     LayoutDashboard,
-    ArrowRight
+    ArrowRight,
+    CreditCard
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -26,6 +27,13 @@ export default function HomePage() {
             href: "/payroll-demo",
             icon: <Calculator className="text-primary-600" />,
             color: "bg-primary-50"
+        },
+        {
+            title: "Pagos Extras",
+            description: "Ingreso masivo de comisiones y horas extras.",
+            href: "/extras",
+            icon: <CreditCard className="text-indigo-600" />,
+            color: "bg-indigo-50"
         },
         {
             title: "Liquidaciones",
