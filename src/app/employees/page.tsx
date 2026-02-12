@@ -1,52 +1,71 @@
 "use client";
 
-import { useState } from 'react';
-import { Employee } from '@/lib/supabase';
+import { useEffect, useState } from 'react';
+import { Employee, supabase } from '@/lib/supabase';
 import EmployeeForm from '@/components/EmployeeForm';
-import { UserPlus, Users, List, Settings } from 'lucide-react';
+import { UserPlus, Users, List, Settings, Edit2, UserMinus, Loader2 } from 'lucide-react';
 
 export default function EmployeesPage() {
     const [view, setView] = useState<'list' | 'add'>('list');
-    const [employees, setEmployees] = useState<Employee[]>([
-        {
-            id: '1',
-            first_name: 'Estuardo',
-            last_name: 'Nistal',
-            dpi: '2233 44556 0101',
-            base_salary: 8500,
-            position: 'Director Operativo',
-            hiring_date: '2021-03-10',
-            company_id: 'c1',
-            status: 'Activo'
-        },
-        {
-            id: '2',
-            first_name: 'Juan',
-            last_name: 'Pérez',
-            dpi: '1122 33445 0101',
-            base_salary: 4500,
-            position: 'Analista Desarrollador',
-            hiring_date: '2023-01-15',
-            company_id: 'c1',
-            status: 'Activo'
-        },
-        {
-            id: '3',
-            first_name: 'María',
-            last_name: 'Gómez',
-            dpi: '9 988 776 650 101',
-            base_salary: 6500,
-            position: 'Contadora General',
-            hiring_date: '2022-06-01',
-            company_id: 'c1',
-            status: 'Activo'
-        }
-    ]);
+    const [loading, setLoading] = useState(true);
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [editingEmployee, setEditingEmployee] = useState<Employee | undefined>(undefined);
 
-    const handleAddEmployee = (newEmp: Employee) => {
-        setEmployees([...employees, { ...newEmp, id: Math.random().toString() }]);
-        setView('list');
-        alert('Empleado registrado exitosamente (Simulado)');
+    useEffect(() => {
+        fetchEmployees();
+    }, []);
+
+    const fetchEmployees = async () => {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('employees')
+            .select('*')
+            .order('first_name', { ascending: true });
+
+        if (error) {
+            console.error('Error fetching employees:', error);
+        } else {
+            setEmployees(data || []);
+        }
+        setLoading(false);
+    };
+
+    const handleSaveEmployee = async (empData: Employee) => {
+        const { error } = await supabase
+            .from('employees')
+            .upsert({
+                ...empData,
+                company_id: 'c1' // Placeholder company ID
+            });
+
+        if (error) {
+            alert('Error al guardar: ' + error.message);
+        } else {
+            alert(editingEmployee ? 'Empleado actualizado' : 'Empleado registrado');
+            setView('list');
+            setEditingEmployee(undefined);
+            fetchEmployees();
+        }
+    };
+
+    const handleEdit = (emp: Employee) => {
+        setEditingEmployee(emp);
+        setView('add');
+    };
+
+    const handleBaja = async (id: string) => {
+        if (!confirm('¿Está seguro de dar de baja a este empleado?')) return;
+
+        const { error } = await supabase
+            .from('employees')
+            .update({ status: 'Baja' })
+            .eq('id', id);
+
+        if (error) {
+            alert('Error: ' + error.message);
+        } else {
+            fetchEmployees();
+        }
     };
 
     return (
@@ -94,9 +113,21 @@ export default function EmployeesPage() {
                         </button>
                     </div>
 
-                    {view === 'add' ? (
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center p-20 bg-white rounded-xl border border-slate-200 shadow-sm">
+                            <Loader2 className="w-10 h-10 text-primary-600 animate-spin mb-4" />
+                            <p className="text-slate-500 font-medium">Cargando colaboradores...</p>
+                        </div>
+                    ) : view === 'add' ? (
                         <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <EmployeeForm onSave={handleAddEmployee} />
+                            <EmployeeForm
+                                onSave={handleSaveEmployee}
+                                initialData={editingEmployee}
+                                onCancel={() => {
+                                    setView('list');
+                                    setEditingEmployee(undefined);
+                                }}
+                            />
                         </div>
                     ) : (
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -108,25 +139,55 @@ export default function EmployeesPage() {
                                         <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Puesto / Depto</th>
                                         <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Salario Base</th>
                                         <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-center">Estado</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-200">
-                                    {employees.map((emp) => (
-                                        <tr key={emp.id} className="hover:bg-slate-50 transition-colors cursor-pointer">
-                                            <td className="px-6 py-4">
-                                                <div className="font-semibold text-slate-800">{emp.first_name} {emp.last_name}</div>
-                                                <div className="text-xs text-slate-500">Ingreso: {emp.hiring_date}</div>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-slate-600 font-mono italic">{emp.dpi}</td>
-                                            <td className="px-6 py-4 text-sm text-slate-600">{emp.position || 'N/A'}</td>
-                                            <td className="px-6 py-4 font-mono font-semibold text-primary-700">Q {emp.base_salary.toFixed(2)}</td>
-                                            <td className="px-6 py-4 text-center">
-                                                <span className="px-2 py-1 text-xs font-bold rounded-full bg-green-100 text-green-700">
-                                                    {emp.status}
-                                                </span>
+                                    {employees.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={6} className="px-6 py-10 text-center text-slate-500 italic">
+                                                No hay empleados registrados.
                                             </td>
                                         </tr>
-                                    ))}
+                                    ) : (
+                                        employees.map((emp) => (
+                                            <tr key={emp.id} className="hover:bg-slate-50 transition-colors group">
+                                                <td className="px-6 py-4">
+                                                    <div className="font-semibold text-slate-800">{emp.first_name} {emp.last_name}</div>
+                                                    <div className="text-xs text-slate-500">Ingreso: {emp.hiring_date}</div>
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-slate-600 font-mono italic">{emp.dpi}</td>
+                                                <td className="px-6 py-4 text-sm text-slate-600">{emp.position || 'N/A'}</td>
+                                                <td className="px-6 py-4 font-mono font-semibold text-primary-700">Q {emp.base_salary.toFixed(2)}</td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <span className={`px-2 py-1 text-xs font-bold rounded-full ${emp.status === 'Activo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                                        }`}>
+                                                        {emp.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => handleEdit(emp)}
+                                                            className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
+                                                            title="Editar"
+                                                        >
+                                                            <Edit2 size={16} />
+                                                        </button>
+                                                        {emp.status === 'Activo' && (
+                                                            <button
+                                                                onClick={() => handleBaja(emp.id!)}
+                                                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                                                title="Dar de Baja"
+                                                            >
+                                                                <UserMinus size={16} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>

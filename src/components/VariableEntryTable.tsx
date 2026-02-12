@@ -67,7 +67,7 @@ export default function VariableEntryTable({ employees, onSave }: VariableEntryT
                             <th className="px-6 py-4">Colaborador</th>
                             <th className="px-6 py-4">Sueldo Base</th>
                             <th className="px-6 py-4 w-40 text-primary-700">Comisiones (Q)</th>
-                            <th className="px-6 py-4 w-40 text-primary-700">Horas Extras</th>
+                            <th className="px-6 py-4 w-40 text-primary-700">Horas Extras (Qty)</th>
                             <th className="px-6 py-4 bg-slate-100/30">Total Líquido</th>
                         </tr>
                     </thead>

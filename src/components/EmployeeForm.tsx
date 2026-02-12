@@ -5,10 +5,11 @@ import { Employee } from '@/lib/supabase';
 
 interface EmployeeFormProps {
     onSave: (employee: Employee) => void;
+    onCancel: () => void;
     initialData?: Employee;
 }
 
-export default function EmployeeForm({ onSave, initialData }: EmployeeFormProps) {
+export default function EmployeeForm({ onSave, onCancel, initialData }: EmployeeFormProps) {
     const [formData, setFormData] = useState<Employee>(initialData || {
         company_id: '',
         first_name: '',
@@ -141,6 +142,7 @@ export default function EmployeeForm({ onSave, initialData }: EmployeeFormProps)
             <div className="flex justify-end pt-6 border-t gap-3">
                 <button
                     type="button"
+                    onClick={onCancel}
                     className="px-6 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
                 >
                     Cancelar
