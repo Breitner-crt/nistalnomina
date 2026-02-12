@@ -31,17 +31,26 @@ export default function EmployeesPage() {
     };
 
     const handleSaveEmployee = async (empData: Employee) => {
+        // Clean data: Ensure UUID fields are valid or excluded
+        const { id, company_id, ...rest } = empData;
+        const cleanData: any = { ...rest };
+
+        if (id && id.length > 10) cleanData.id = id;
+        if (company_id && company_id.length > 10) cleanData.company_id = company_id;
+
+        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+            alert('Error: No se detectaron las credenciales de Supabase. Asegúrate de configurar las variables de entorno en Vercel y hacer un "Redeploy".');
+            return;
+        }
+
         const { error } = await supabase
             .from('employees')
-            .upsert({
-                ...empData,
-                company_id: 'c1' // Placeholder company ID
-            });
+            .upsert(cleanData);
 
         if (error) {
             alert('Error al guardar: ' + error.message);
         } else {
-            alert(editingEmployee ? 'Empleado actualizado' : 'Empleado registrado');
+            alert(id ? 'Empleado actualizado' : 'Empleado registrado');
             setView('list');
             setEditingEmployee(undefined);
             fetchEmployees();
