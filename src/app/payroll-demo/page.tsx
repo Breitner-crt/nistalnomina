@@ -1,131 +1,278 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { calculatePayroll, PayrollInput, PayrollResults } from "@/lib/payroll-engine";
+import { supabase, Employee } from "@/lib/supabase";
+import { Users, Calculator, Eye, ArrowLeft, RefreshCw, FileText } from "lucide-react";
+import Link from "next/link";
 
-export default function PayrollDemoPage() {
-    const [input, setInput] = useState<PayrollInput>({
-        baseSalary: 3500,
-        overtimeHours: 0,
-        commissions: 0,
-        bonuses: 0,
-        loans: 0,
-        advances: 0,
-    });
+export default function PayrollGenerationPage() {
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [payrollEntries, setPayrollEntries] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedEmployeeResults, setSelectedEmployeeResults] = useState<{ emp: Employee, results: PayrollResults } | null>(null);
 
-    const [results, setResults] = useState<PayrollResults | null>(null);
+    useEffect(() => {
+        fetchData();
+    }, []);
 
-    const handleCalculate = () => {
-        const res = calculatePayroll(input);
-        setResults(res);
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            // 1. Fetch active employees
+            const { data: empData, error: empError } = await supabase
+                .from('employees')
+                .select('*')
+                .eq('status', 'Activo')
+                .order('first_name', { ascending: true });
+
+            if (empError) throw empError;
+
+            // 2. Fetch variable entries
+            const { data: payrollData, error: payrollError } = await supabase
+                .from('payroll_entries')
+                .select('*');
+
+            if (payrollError) throw payrollError;
+
+            setEmployees(empData || []);
+            setPayrollEntries(payrollData || []);
+        } catch (error) {
+            console.error("Error fetching payroll data:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    return (
-        <div className="p-8 max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold text-primary-900 mb-6">Demo Cálculo de Planilla (Guatemala)</h1>
+    const getVariableData = (employeeId: string) => {
+        return payrollEntries.find(entry => entry.employee_id === employeeId) || {
+            commissions: 0,
+            overtime_hours: 0,
+            bonuses: 0,
+            loans: 0,
+            advances: 0
+        };
+    };
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="bg-white p-6 rounded-lg shadow border border-slate-200">
-                    <h2 className="text-xl font-semibold mb-4 border-b pb-2 text-slate-700">Entradas</h2>
+    const handleViewDetail = (emp: Employee) => {
+        const varData = getVariableData(emp.id!);
+        const results = calculatePayroll({
+            baseSalary: emp.base_salary,
+            overtimeHours: varData.overtime_hours || 0,
+            commissions: varData.commissions || 0,
+            bonuses: varData.other_bonuses || 0,
+            loans: varData.loans_deduction || 0,
+            advances: varData.advances_deduction || 0
+        });
+        setSelectedEmployeeResults({ emp, results });
+    };
 
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700">Salario Base (Q)</label>
-                            <input
-                                type="number"
-                                value={input.baseSalary}
-                                onChange={(e) => setInput({ ...input, baseSalary: parseFloat(e.target.value) || 0 })}
-                                className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2 border"
-                            />
-                        </div>
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px]">
+                <RefreshCw className="animate-spin text-primary-600 mb-4" size={48} />
+                <p className="text-slate-600 font-medium">Generando cálculos de planilla...</p>
+            </div>
+        );
+    }
 
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700">Horas Extras</label>
-                            <input
-                                type="number"
-                                value={input.overtimeHours}
-                                onChange={(e) => setInput({ ...input, overtimeHours: parseFloat(e.target.value) || 0 })}
-                                className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2 border"
-                            />
-                        </div>
+    if (selectedEmployeeResults) {
+        const { emp, results } = selectedEmployeeResults;
+        return (
+            <div className="p-8 max-w-4xl mx-auto">
+                <button
+                    onClick={() => setSelectedEmployeeResults(null)}
+                    className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium mb-6 transition-colors"
+                >
+                    <ArrowLeft size={20} />
+                    Volver a la lista
+                </button>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700">Comisiones (Q)</label>
-                                <input
-                                    type="number"
-                                    value={input.commissions}
-                                    onChange={(e) => setInput({ ...input, commissions: parseFloat(e.target.value) || 0 })}
-                                    className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2 border"
-                                />
+                <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+                    <div className="bg-primary-600 p-6 text-white">
+                        <h2 className="text-2xl font-bold">{emp.first_name} {emp.last_name}</h2>
+                        <p className="opacity-90">{emp.position} | {emp.department}</p>
+                    </div>
+
+                    <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-12">
+                        <div className="space-y-6">
+                            <h3 className="text-lg font-bold text-slate-800 border-b pb-2 flex items-center gap-2">
+                                <FileText className="text-primary-500" size={20} />
+                                Desglose de Ingresos
+                            </h3>
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                                    <span className="text-slate-600">Salario Base</span>
+                                    <span className="font-bold text-slate-900 font-mono text-lg">Q {results.baseSalaryEarned.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                </div>
+                                <div className="flex justify-between items-center p-2">
+                                    <span className="text-slate-600">Bonificación Incentivo</span>
+                                    <span className="font-semibold text-green-600 font-mono">Q {results.bonificacionIncentivo.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between items-center p-2">
+                                    <span className="text-slate-600">Comisiones</span>
+                                    <span className="font-semibold text-slate-800 font-mono">Q {results.commissions.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between items-center p-2 border-b pb-4">
+                                    <span className="text-slate-600">Horas Extras ({results.overtimePay > 0 ? 'Calculado' : '0'})</span>
+                                    <span className="font-semibold text-slate-800 font-mono">Q {results.overtimePay.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between items-center pt-2 text-primary-900">
+                                    <span className="font-bold">Total Devengado</span>
+                                    <span className="font-bold text-xl font-mono">Q {(results.grossSalary).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700">Bonos Extra (Q)</label>
-                                <input
-                                    type="number"
-                                    value={input.bonuses}
-                                    onChange={(e) => setInput({ ...input, bonuses: parseFloat(e.target.value) || 0 })}
-                                    className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2 border"
-                                />
-                            </div>
                         </div>
 
-                        <button
-                            onClick={handleCalculate}
-                            className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 transition-colors font-semibold mt-4"
-                        >
-                            Calcular
-                        </button>
+                        <div className="space-y-6">
+                            <h3 className="text-lg font-bold text-red-800 border-b pb-2">Deducciones</h3>
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center p-2">
+                                    <span className="text-slate-600">IGSS Laboral (4.83%)</span>
+                                    <span className="font-semibold text-red-600 font-mono">- Q {results.igssLaboral.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between items-center p-2">
+                                    <span className="text-slate-600">ISR Retenido (Estim.)</span>
+                                    <span className="font-semibold text-red-600 font-mono">- Q {results.isrRetencion.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between items-center p-2 border-b pb-4">
+                                    <span className="text-slate-600">Otras Deducciones</span>
+                                    <span className="font-semibold text-red-600 font-mono">- Q {(results.totalDeductions - results.igssLaboral - results.isrRetencion).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between items-center pt-4 bg-primary-50 p-4 rounded-xl">
+                                    <span className="font-bold text-primary-900 text-lg">Total Líquido</span>
+                                    <span className="font-black text-2xl text-primary-600 font-mono underline decoration-primary-200 decoration-4">Q {results.netSalary.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                </div>
+                            </div>
+
+                            <div className="mt-8 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cargas Patronales (Costo Empresa)</h4>
+                                <div className="grid grid-cols-2 gap-2 text-sm italic text-slate-600">
+                                    <span>IGSS (10.67%): Q{results.igssPatronal.toFixed(2)}</span>
+                                    <span>IRTRA (1%): Q{results.irtra.toFixed(2)}</span>
+                                    <span>INTECAP (1%): Q{results.intecap.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
+        );
+    }
 
-                <div className="bg-slate-50 p-6 rounded-lg shadow border border-slate-200">
-                    <h2 className="text-xl font-semibold mb-4 border-b pb-2 text-slate-700">Resultados</h2>
+    return (
+        <div className="p-8 max-w-6xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                        <Users className="text-primary-600" size={32} />
+                        Planilla General
+                    </h1>
+                    <p className="text-slate-500 mt-1">Cálculo mensual basado en salarios base y variables de Supabase.</p>
+                </div>
+                <div className="flex gap-2">
+                    <button
+                        onClick={fetchData}
+                        className="p-2.5 text-slate-600 hover:text-primary-600 bg-white border border-slate-200 rounded-xl hover:bg-primary-50 transition-all shadow-sm"
+                        title="Actualizar Datos"
+                    >
+                        <RefreshCw size={20} />
+                    </button>
+                    <Link
+                        href="/reports"
+                        className="bg-primary-600 text-white px-5 py-2.5 rounded-xl hover:bg-primary-700 transition-all font-bold shadow-lg shadow-primary-200 flex items-center gap-2"
+                    >
+                        <FileText size={20} />
+                        Exportar Reporte
+                    </Link>
+                </div>
+            </div>
 
-                    {results ? (
-                        <div className="space-y-3">
-                            <div className="flex justify-between">
-                                <span>Base + Letras + Com:</span>
-                                <span className="font-mono">Q {(results.baseSalaryEarned + results.overtimePay + results.commissions + results.otherBonuses).toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between font-bold text-green-700">
-                                <span>Bonif. Incentivo:</span>
-                                <span className="font-mono">Q {results.bonificacionIncentivo.toFixed(2)}</span>
-                            </div>
-                            <div className="border-t pt-2 mt-2">
-                                <div className="flex justify-between text-red-600">
-                                    <span>IGSS Laboral (4.83%):</span>
-                                    <span className="font-mono">- Q {results.igssLaboral.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-red-600">
-                                    <span>ISR Retenid (Estim.):</span>
-                                    <span className="font-mono">- Q {results.isrRetencion.toFixed(2)}</span>
-                                </div>
-                            </div>
-                            <div className="border-t pt-4 mt-4 flex justify-between text-xl font-bold text-primary-900">
-                                <span>Total Líquido:</span>
-                                <span className="font-mono">Q {results.netSalary.toFixed(2)}</span>
-                            </div>
+            <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead>
+                            <tr className="bg-slate-50 border-b border-slate-100 font-bold text-slate-600 text-sm uppercase tracking-wider">
+                                <th className="px-6 py-4">Colaborador</th>
+                                <th className="px-6 py-4">Sueldo Base</th>
+                                <th className="px-6 py-4">Variables (C/H.E)</th>
+                                <th className="px-6 py-4 text-center">Bonif. Inc.</th>
+                                <th className="px-6 py-4 text-right">Total Líquido</th>
+                                <th className="px-6 py-4 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {employees.length === 0 ? (
+                                <tr>
+                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">
+                                        No hay empleados activos registrados.
+                                    </td>
+                                </tr>
+                            ) : (
+                                employees.map((emp) => {
+                                    const varData = getVariableData(emp.id!);
+                                    const results = calculatePayroll({
+                                        baseSalary: emp.base_salary,
+                                        overtimeHours: varData.overtime_hours || 0,
+                                        commissions: varData.commissions || 0,
+                                        bonuses: varData.other_bonuses || 0,
+                                        loans: varData.loans_deduction || 0,
+                                        advances: varData.advances_deduction || 0
+                                    });
 
-                            <div className="mt-8 pt-4 border-t border-slate-300">
-                                <h3 className="text-sm font-bold text-slate-500 uppercase">Cargas Patronales</h3>
-                                <div className="flex justify-between text-sm mt-2">
-                                    <span>IGSS (10.67%):</span>
-                                    <span className="font-mono">Q {results.igssPatronal.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span>IRTRA (1%):</span>
-                                    <span className="font-mono">Q {results.irtra.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span>INTECAP (1%):</span>
-                                    <span className="font-mono">Q {results.intecap.toFixed(2)}</span>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <p className="text-slate-500 italic">Ingrese datos y presione calcular</p>
-                    )}
+                                    return (
+                                        <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors group">
+                                            <td className="px-6 py-4">
+                                                <p className="font-bold text-slate-900">{emp.first_name} {emp.last_name}</p>
+                                                <p className="text-xs text-slate-500 uppercase tracking-wide">{emp.position}</p>
+                                            </td>
+                                            <td className="px-6 py-4 font-mono text-slate-600">
+                                                Q {emp.base_salary.toFixed(2)}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-col text-xs gap-0.5">
+                                                    <span className="text-slate-500">Com: Q{results.commissions.toFixed(2)}</span>
+                                                    <span className="text-slate-500">H.E: Q{results.overtimePay.toFixed(2)}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <span className="bg-green-100 text-green-700 text-[10px] font-black px-2 py-1 rounded-full">
+                                                    Q 250.00
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <span className="font-black text-primary-700 font-mono text-lg">
+                                                    Q {results.netSalary.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <button
+                                                    onClick={() => handleViewDetail(emp)}
+                                                    className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
+                                                    title="Ver Detalle"
+                                                >
+                                                    <Eye size={20} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div className="mt-8 bg-blue-50/50 border border-blue-100 rounded-2xl p-6 flex items-start gap-4">
+                <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
+                    <Calculator size={24} />
+                </div>
+                <div>
+                    <h4 className="font-bold text-blue-900">Nota del Sistema</h4>
+                    <p className="text-blue-700 text-sm mt-1">
+                        Los cálculos de ISR y Deducción de Préstamos se obtienen automáticamente de la base de datos de cada mes.
+                        Asegúrese de haber completado la carga de **Pagos Extras** antes de emitir los pagos globales.
+                    </p>
                 </div>
             </div>
         </div>
