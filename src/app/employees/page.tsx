@@ -5,6 +5,8 @@ import { Employee, supabase } from '@/lib/supabase';
 import EmployeeForm from '@/components/EmployeeForm';
 import { UserPlus, Users, List, Settings, Edit2, UserMinus, Loader2 } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default function EmployeesPage() {
     const [view, setView] = useState<'list' | 'add'>('list');
     const [loading, setLoading] = useState(true);
