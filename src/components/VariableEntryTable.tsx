@@ -14,16 +14,42 @@ interface VariableEntry {
 
 interface VariableEntryTableProps {
     employees: Employee[];
+    initialEntries?: any[]; // For pre-populating existing data
     onSave: (data: VariableEntry[]) => void;
 }
 
-export default function VariableEntryTable({ employees, onSave }: VariableEntryTableProps) {
-    const [entries, setEntries] = useState<Record<string, VariableEntry>>(
-        Object.fromEntries(employees.map(emp => [
-            emp.id || '',
-            { employeeId: emp.id || '', commissions: 0, overtimeHours: 0, bonuses: 0 }
-        ]))
-    );
+export default function VariableEntryTable({ employees, onSave, initialEntries = [] }: VariableEntryTableProps) {
+    const [entries, setEntries] = useState<Record<string, VariableEntry>>({});
+
+    // Initialize/Update entries when employees or initialEntries change
+    useEffect(() => {
+        setEntries(prev => {
+            const next = { ...prev };
+
+            // First, ensure all employees have an entry
+            employees.forEach(emp => {
+                const id = emp.id || '';
+                if (!next[id]) {
+                    next[id] = { employeeId: id, commissions: 0, overtimeHours: 0, bonuses: 0 };
+                }
+            });
+
+            // Then, overlay initial data from DB if available
+            initialEntries.forEach(item => {
+                const id = item.employee_id;
+                if (next[id]) {
+                    next[id] = {
+                        ...next[id],
+                        commissions: item.commissions || 0,
+                        overtimeHours: item.overtime_hours || 0
+                        // Add bonuses if needed
+                    };
+                }
+            });
+
+            return next;
+        });
+    }, [employees, initialEntries]);
 
     const updateEntry = (id: string, field: keyof VariableEntry, value: number) => {
         setEntries(prev => ({
