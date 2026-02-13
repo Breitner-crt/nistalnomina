@@ -54,13 +54,21 @@ export default function PagosExtrasPage() {
         setLoading(true);
         try {
             // Prepare data for payroll_entries
-            const entriesToSave = data.map(entry => ({
-                id: entry.id, // Primary Key for update if exists
-                employee_id: entry.employeeId,
-                commissions: entry.commissions,
-                overtime_hours: entry.overtimeHours,
-                bonificacion_incentivo: 250, // Default base
-            }));
+            const entriesToSave = data.map(entry => {
+                const cleanEntry: any = {
+                    employee_id: entry.employeeId,
+                    commissions: entry.commissions,
+                    overtime_hours: entry.overtimeHours,
+                    bonificacion_incentivo: 250, // Default base
+                };
+
+                // Only include ID if it exists (for updates)
+                if (entry.id) {
+                    cleanEntry.id = entry.id;
+                }
+
+                return cleanEntry;
+            });
 
             // Upsert by ID (default behavior for primary key)
             const { error } = await supabase
