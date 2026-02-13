@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Employee } from '@/lib/supabase';
 import { calculatePayroll, PayrollResults } from '@/lib/payroll-engine';
 import { Save, Calculator, AlertCircle } from 'lucide-react';
