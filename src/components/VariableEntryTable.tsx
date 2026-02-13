@@ -6,6 +6,7 @@ import { calculatePayroll, PayrollResults } from '@/lib/payroll-engine';
 import { Save, Calculator, AlertCircle } from 'lucide-react';
 
 interface VariableEntry {
+    id?: string; // PK of payroll_entries
     employeeId: string;
     commissions: number;
     overtimeHours: number;
@@ -40,6 +41,7 @@ export default function VariableEntryTable({ employees, onSave, initialEntries =
                 if (next[id]) {
                     next[id] = {
                         ...next[id],
+                        id: item.id, // Capture the record ID
                         commissions: item.commissions || 0,
                         overtimeHours: item.overtime_hours || 0
                         // Add bonuses if needed

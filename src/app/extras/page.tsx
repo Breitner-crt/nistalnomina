@@ -30,7 +30,7 @@ export default function PagosExtrasPage() {
             // Fetch existing payroll entries (variable data)
             const { data: payrollData, error: payrollError } = await supabase
                 .from('payroll_entries')
-                .select('employee_id, commissions, overtime_hours');
+                .select('id, employee_id, commissions, overtime_hours');
 
             if (payrollError) throw payrollError;
 
@@ -54,25 +54,27 @@ export default function PagosExtrasPage() {
         setLoading(true);
         try {
             // Prepare data for payroll_entries
-            // In a full implementation, we'd use a real period_id
             const entriesToSave = data.map(entry => ({
+                id: entry.id, // Primary Key for update if exists
                 employee_id: entry.employeeId,
                 commissions: entry.commissions,
                 overtime_hours: entry.overtimeHours,
                 bonificacion_incentivo: 250, // Default base
-                // company_id could also be here if we had it
             }));
 
-            // We use upsert on employee_id (simplified for this demo)
-            // Note: In real PostgreSQL you'd need the unique constraint for upsert to work on employee_id
+            // Upsert by ID (default behavior for primary key)
             const { error } = await supabase
                 .from('payroll_entries')
-                .upsert(entriesToSave, { onConflict: 'employee_id' });
+                .upsert(entriesToSave);
 
             if (error) throw error;
 
             setIsSaved(true);
             setTimeout(() => setIsSaved(false), 3000);
+
+            // Refresh data to get new record IDs for newly created rows
+            fetchActiveEmployees();
+
             alert('Datos de pagos extras guardados exitosamente');
         } catch (error: any) {
             console.error('Error saving extras:', error);
