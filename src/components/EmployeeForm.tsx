@@ -124,18 +124,53 @@ export default function EmployeeForm({ onSave, onCancel, initialData }: Employee
                             className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 p-2.5 border"
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700">Tipo de Contrato</label>
-                        <select
-                            value={formData.contract_type}
-                            onChange={(e) => setFormData({ ...formData, contract_type: e.target.value })}
-                            className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 p-2.5 border bg-white"
-                        >
-                            <option value="Indefinido">Indefinido</option>
-                            <option value="Temporal">Temporal / Plazo Fijo</option>
-                            <option value="Servicios">Servicios Profesionales</option>
-                        </select>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700">Tipo de Contrato</label>
+                            <select
+                                value={formData.contract_type}
+                                onChange={(e) => setFormData({ ...formData, contract_type: e.target.value })}
+                                className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 p-2.5 border bg-white"
+                            >
+                                <option value="Indefinido">Indefinido</option>
+                                <option value="Temporal">Temporal / Plazo Fijo</option>
+                                <option value="Servicios">Servicios Profesionales</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700">Estado *</label>
+                            <select
+                                required
+                                value={formData.status}
+                                onChange={(e) => {
+                                    const newStatus = e.target.value as 'Activo' | 'Baja';
+                                    setFormData({
+                                        ...formData,
+                                        status: newStatus,
+                                        termination_date: newStatus === 'Baja' ? (formData.termination_date || new Date().toISOString().split('T')[0]) : undefined
+                                    });
+                                }}
+                                className={`mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 p-2.5 border bg-white font-bold ${formData.status === 'Activo' ? 'text-green-600' : 'text-red-600'
+                                    }`}
+                            >
+                                <option value="Activo">Activo</option>
+                                <option value="Baja">Baja</option>
+                            </select>
+                        </div>
                     </div>
+
+                    {formData.status === 'Baja' && (
+                        <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                            <label className="block text-sm font-medium text-rose-700">Fecha de Baja *</label>
+                            <input
+                                required
+                                type="date"
+                                value={formData.termination_date || ''}
+                                onChange={(e) => setFormData({ ...formData, termination_date: e.target.value })}
+                                className="mt-1 block w-full rounded-lg border-rose-300 shadow-sm focus:border-rose-500 focus:ring-rose-500 p-2.5 border bg-rose-50 font-bold text-rose-700"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 

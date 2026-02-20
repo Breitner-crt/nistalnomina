@@ -170,6 +170,7 @@ export default function EmployeesPage() {
                                         <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">DPI</th>
                                         <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Puesto / Depto</th>
                                         <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Salario Base</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Fecha Baja</th>
                                         <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-center">Estado</th>
                                         <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Acciones</th>
                                     </tr>
@@ -198,16 +199,16 @@ export default function EmployeesPage() {
                                                 <tr key={emp.id} className="hover:bg-slate-50 transition-colors group">
                                                     <td className="px-6 py-4">
                                                         <div className="font-semibold text-slate-800">{emp.first_name} {emp.last_name}</div>
-                                                        <div className="text-[10px] text-slate-500 flex flex-col">
-                                                            <span>Ingreso: {emp.hiring_date}</span>
-                                                            {emp.status === 'Baja' && emp.termination_date && (
-                                                                <span className="text-rose-600 font-bold">Baja: {emp.termination_date}</span>
-                                                            )}
+                                                        <div className="text-[10px] text-slate-500">
+                                                            Ingreso: {emp.hiring_date}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 text-sm text-slate-600 font-mono italic">{emp.dpi}</td>
                                                     <td className="px-6 py-4 text-sm text-slate-600">{emp.position || 'N/A'}</td>
                                                     <td className="px-6 py-4 font-mono font-semibold text-primary-700">Q {emp.base_salary.toFixed(2)}</td>
+                                                    <td className="px-6 py-4 text-sm text-rose-600 font-bold">
+                                                        {emp.status === 'Baja' ? (emp.termination_date || 'N/A') : '-'}
+                                                    </td>
                                                     <td className="px-6 py-4 text-center">
                                                         <span className={`px-2 py-1 text-xs font-bold rounded-full ${emp.status === 'Activo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                                                             }`}>

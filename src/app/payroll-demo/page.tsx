@@ -121,7 +121,7 @@ export default function PayrollGenerationPage() {
                                 </div>
                                 <div className="flex justify-between items-center pt-2 text-primary-900">
                                     <span className="font-bold">Total Devengado</span>
-                                    <span className="font-bold text-xl font-mono">Q {(results.grossSalary).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                    <span className="font-bold text-xl font-mono">Q {(results.grossSalary).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 </div>
                             </div>
                         </div>
@@ -143,7 +143,7 @@ export default function PayrollGenerationPage() {
                                 </div>
                                 <div className="flex justify-between items-center pt-4 bg-primary-50 p-4 rounded-xl">
                                     <span className="font-bold text-primary-900 text-lg">Total Líquido</span>
-                                    <span className="font-black text-2xl text-primary-600 font-mono underline decoration-primary-200 decoration-4">Q {results.netSalary.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                    <span className="font-black text-2xl text-primary-600 font-mono underline decoration-primary-200 decoration-4">Q {results.netSalary.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 </div>
                             </div>
 
@@ -280,9 +280,12 @@ export default function PayrollGenerationPage() {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <span className="font-black text-primary-700 font-mono text-lg">
-                                                        Q {results.netSalary.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                                    </span>
+                                                    <div className="flex flex-col items-end">
+                                                        <span className="font-mono font-black text-primary-700 text-base flex gap-1 items-center">
+                                                            <span className="text-[10px] text-primary-500 font-bold">Q</span>
+                                                            {results.netSalary.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        </span>
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
                                                     <button
