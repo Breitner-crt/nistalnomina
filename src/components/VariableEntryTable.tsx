@@ -68,7 +68,8 @@ export default function VariableEntryTable({ employees, onSave, initialEntries =
             commissions: entry.commissions,
             bonuses: entry.bonuses,
             loans: 0,
-            advances: 0
+            advances: 0,
+            absences: 0
         });
     };
 

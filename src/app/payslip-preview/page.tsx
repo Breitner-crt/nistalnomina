@@ -68,7 +68,8 @@ export default function PayslipPreviewPage() {
             commissions: varData.commissions || 0,
             bonuses: varData.other_bonuses || 0,
             loans: varData.loans_deduction || 0,
-            advances: varData.advances_deduction || 0
+            advances: varData.advances_deduction || 0,
+            absences: varData.absences || 0
         });
 
         setResults(res);
