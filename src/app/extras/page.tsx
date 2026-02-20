@@ -57,19 +57,18 @@ export default function PagosExtrasPage() {
         try {
             // Prepare data for payroll_entries
             const entriesToSave = data.map(entry => {
+                // Find existing data to preserve other fields (absences, etc.)
+                const existing = initialEntries.find(i => i.employee_id === entry.employeeId) || {};
+
                 const cleanEntry: any = {
+                    ...existing,
                     employee_id: entry.employeeId,
                     commissions: Number(entry.commissions || 0),
                     overtime_hours: Number(entry.overtimeHours || 0),
                     bonificacion_incentivo: 250, // Default base
                 };
 
-                // Use existing ID or generate a new one if missing
-                // This bypasses issues where the DB might not have the default value correctly set
-                if (entry.id && typeof entry.id === 'string' && entry.id.length > 10) {
-                    cleanEntry.id = entry.id;
-                } else {
-                    // Generate a UUID for new records
+                if (!cleanEntry.id || typeof cleanEntry.id !== 'string' || cleanEntry.id.length < 10) {
                     cleanEntry.id = crypto.randomUUID();
                 }
 

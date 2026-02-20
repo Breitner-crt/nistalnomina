@@ -36,6 +36,13 @@ export default function HomePage() {
             color: "bg-rose-50"
         },
         {
+            title: "Pagos Extras",
+            description: "Gestión de comisiones y horas extras del periodo.",
+            href: "/extras",
+            icon: <CreditCard className="text-primary-600" />,
+            color: "bg-primary-50"
+        },
+        {
             title: "Liquidaciones",
             description: "Calculadora de indemnización y prestaciones irrenunciables.",
             href: "/severance",

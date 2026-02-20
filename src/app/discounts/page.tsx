@@ -47,14 +47,17 @@ export default function DescuentosPage() {
         setLoading(true);
         try {
             const entriesToSave = data.map(entry => {
+                // Find existing data for this employee to preserve other fields (commissions, etc.)
+                const existing = initialEntries.find(i => i.employee_id === entry.employeeId) || {};
+
                 const cleanEntry: any = {
+                    ...existing,
                     employee_id: entry.employeeId,
                     absences: Number(entry.absences || 0),
                 };
 
-                if (entry.id && typeof entry.id === 'string' && entry.id.length > 10) {
-                    cleanEntry.id = entry.id;
-                } else {
+                // If it's a new record or we don't have a valid ID yet
+                if (!cleanEntry.id || typeof cleanEntry.id !== 'string' || cleanEntry.id.length < 10) {
                     cleanEntry.id = crypto.randomUUID();
                 }
 
