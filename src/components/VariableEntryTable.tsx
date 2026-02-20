@@ -129,12 +129,20 @@ export default function VariableEntryTable({ employees, onSave, initialEntries =
                                             />
                                         </td>
                                         <td className="px-6 py-5">
-                                            <input
-                                                type="number"
-                                                value={entries[id]?.overtimeHours || 0}
-                                                onChange={(e) => updateEntry(id, 'overtimeHours', parseFloat(e.target.value) || 0)}
-                                                className="w-full bg-primary-50 border-primary-100 rounded-lg p-2 text-sm font-bold text-primary-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
-                                            />
+                                            <div className="flex items-center gap-3">
+                                                <input
+                                                    type="number"
+                                                    value={entries[id]?.overtimeHours || 0}
+                                                    onChange={(e) => updateEntry(id, 'overtimeHours', parseFloat(e.target.value) || 0)}
+                                                    className="w-20 bg-primary-50 border-primary-100 rounded-lg p-2 text-sm font-bold text-primary-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all text-center"
+                                                />
+                                                <div className="flex flex-col min-w-[80px]">
+                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Referencia</span>
+                                                    <span className="text-sm font-black text-primary-700 font-mono">
+                                                        +Q{results.overtimePay.toFixed(2)}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-5 bg-slate-50/30">
                                             <div className="flex items-center justify-between">
