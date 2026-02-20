@@ -58,13 +58,15 @@ export default function PagosExtrasPage() {
             const entriesToSave = data.map(entry => {
                 const cleanEntry: any = {
                     employee_id: entry.employeeId,
-                    commissions: entry.commissions,
-                    overtime_hours: entry.overtimeHours,
+                    commissions: Number(entry.commissions || 0),
+                    overtime_hours: Number(entry.overtimeHours || 0),
                     bonificacion_incentivo: 250, // Default base
                 };
 
-                // Only include ID if it exists (for updates)
-                if (entry.id) {
+                // CRITICAL: Only include id if it's NOT null/undefined and is a valid string
+                // If we include { id: null } or { id: undefined }, Supabase/PostgreSQL 
+                // might try to literal insert NULL into the PK column instead of using the DEFAULT.
+                if (entry.id && typeof entry.id === 'string' && entry.id.length > 5) {
                     cleanEntry.id = entry.id;
                 }
 
@@ -74,7 +76,9 @@ export default function PagosExtrasPage() {
             // Upsert by ID (default behavior for primary key)
             const { error } = await supabase
                 .from('payroll_entries')
-                .upsert(entriesToSave);
+                .upsert(entriesToSave, {
+                    onConflict: 'employee_id' // Prefer employee_id conflict to handle 1-to-1 relationship correctly
+                });
 
             if (error) throw error;
 
