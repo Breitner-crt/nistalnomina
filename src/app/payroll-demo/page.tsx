@@ -165,6 +165,10 @@ export default function PayrollGenerationPage() {
         <div className="p-8 max-w-6xl mx-auto">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
+                    <Link href="/" className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-bold mb-2 transition-colors group w-fit">
+                        <ArrowLeft size={18} className="translate-x-0 group-hover:-translate-x-1 transition-transform" />
+                        <span>Volver al Dashboard</span>
+                    </Link>
                     <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
                         <Users className="text-primary-600" size={32} />
                         Planilla General

@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import Payslip from '@/components/Payslip';
 import { calculatePayroll } from '@/lib/payroll-engine';
 import { supabase, Employee } from '@/lib/supabase';
-import { Printer, ArrowLeft, Mail, User, RefreshCw, AlertCircle } from 'lucide-react';
+import { Printer, ArrowLeft, Mail, User, Users, RefreshCw, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import { ChangeEvent } from 'react';
 
 export default function PayslipPreviewPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
@@ -15,6 +16,10 @@ export default function PayslipPreviewPage() {
 
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
     const [results, setResults] = useState<any>(null);
+
+    // Batch state
+    const [showAll, setShowAll] = useState(false);
+    const [batchData, setBatchData] = useState<{ emp: Employee, res: any }[]>([]);
 
     useEffect(() => {
         fetchEmployees();
@@ -33,6 +38,7 @@ export default function PayslipPreviewPage() {
     };
 
     const handleEmployeeSelect = async (id: string) => {
+        setShowAll(false);
         if (!id) {
             setSelectedEmployee(null);
             setResults(null);
@@ -69,6 +75,38 @@ export default function PayslipPreviewPage() {
         setLoadingDetails(false);
     };
 
+    const handleGenerateAll = async () => {
+        setLoadingDetails(true);
+        setSelectedEmpId("");
+        setSelectedEmployee(null);
+        setResults(null);
+
+        // 1. Fetch all variables
+        const { data: allEntries, error } = await supabase
+            .from('payroll_entries')
+            .select('*');
+
+        const entries = allEntries || [];
+
+        // 2. Calculate for all active employees
+        const data = employees.map((emp: Employee) => {
+            const varData = entries.find((e: any) => e.employee_id === emp.id) || {};
+            const res = calculatePayroll({
+                baseSalary: emp.base_salary,
+                overtimeHours: varData.overtime_hours || 0,
+                commissions: varData.commissions || 0,
+                bonuses: varData.other_bonuses || 0,
+                loans: varData.loans_deduction || 0,
+                advances: varData.advances_deduction || 0
+            });
+            return { emp, res };
+        });
+
+        setBatchData(data);
+        setShowAll(true);
+        setLoadingDetails(false);
+    };
+
     const handlePrint = () => {
         window.print();
     };
@@ -79,8 +117,9 @@ export default function PayslipPreviewPage() {
             <div className="bg-white border-b p-4 sticky top-0 z-50 shadow-sm print:hidden">
                 <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-6 w-full md:w-auto">
-                        <Link href="/" className="flex items-center gap-2 text-slate-500 hover:text-primary-600 transition-colors">
-                            <ArrowLeft size={18} />
+                        <Link href="/" className="flex items-center gap-2 text-slate-500 hover:text-primary-600 transition-colors font-bold text-sm group">
+                            <ArrowLeft size={18} className="translate-x-0 group-hover:-translate-x-1 transition-transform" />
+                            <span className="hidden md:inline">Volver al Dashboard</span>
                         </Link>
 
                         <div className="relative flex-1 md:w-64">
@@ -88,7 +127,7 @@ export default function PayslipPreviewPage() {
                             <select
                                 className="w-full pl-10 pr-4 py-3 rounded-xl border-slate-200 bg-slate-50 font-bold text-sm focus:ring-2 focus:ring-primary-500 appearance-none cursor-pointer"
                                 value={selectedEmpId}
-                                onChange={(e) => handleEmployeeSelect(e.target.value)}
+                                onChange={(e: ChangeEvent<HTMLSelectElement>) => handleEmployeeSelect(e.target.value)}
                                 disabled={loadingEmps}
                             >
                                 <option value="">Seleccionar Colaborador...</option>
@@ -104,15 +143,16 @@ export default function PayslipPreviewPage() {
 
                     <div className="flex gap-3 w-full md:w-auto">
                         <button
-                            className="flex-1 md:flex-none flex items-center justify-center gap-2 text-slate-600 bg-white px-4 py-3 rounded-xl border hover:bg-slate-50 transition-all font-black text-xs uppercase tracking-widest disabled:opacity-50"
-                            disabled={!selectedEmployee}
+                            onClick={handleGenerateAll}
+                            className="flex-1 md:flex-none flex items-center justify-center gap-2 text-primary-600 bg-primary-50 px-4 py-3 rounded-xl border border-primary-100 hover:bg-primary-100 transition-all font-black text-xs uppercase tracking-widest disabled:opacity-50"
+                            disabled={loadingEmps || employees.length === 0}
                         >
-                            <Mail size={16} />
-                            Enviar
+                            <Users size={16} />
+                            Generar Todos
                         </button>
                         <button
                             onClick={handlePrint}
-                            disabled={!selectedEmployee || loadingDetails}
+                            disabled={(!selectedEmployee && !showAll) || loadingDetails}
                             className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-xl hover:bg-primary-600 shadow-lg transition-all font-black text-xs uppercase tracking-widest disabled:opacity-50"
                         >
                             <Printer size={16} />
@@ -128,7 +168,20 @@ export default function PayslipPreviewPage() {
                     {loadingDetails ? (
                         <div className="bg-white p-20 rounded-3xl shadow-xl flex flex-col items-center justify-center gap-4 min-w-[300px]">
                             <RefreshCw size={40} className="animate-spin text-primary-500" />
-                            <p className="font-black text-slate-400 uppercase text-xs tracking-widest">Calculando Boleta...</p>
+                            <p className="font-black text-slate-400 uppercase text-xs tracking-widest">Procesando Boletas...</p>
+                        </div>
+                    ) : showAll && batchData.length > 0 ? (
+                        <div className="flex flex-col gap-8 print:gap-0">
+                            {batchData.map(({ emp, res }: { emp: Employee, res: any }, idx: number) => (
+                                <div key={emp.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500 print:break-after-page" style={{ animationDelay: `${idx * 50}ms` }}>
+                                    <Payslip
+                                        employee={emp}
+                                        results={res}
+                                        period={`${new Date().toLocaleString('es-GT', { month: 'long' })} ${new Date().getFullYear()}`}
+                                        companyName="NistalNomina S.A."
+                                    />
+                                </div>
+                            ))}
                         </div>
                     ) : selectedEmployee && results ? (
                         <div className="animate-in fade-in zoom-in duration-300">
@@ -146,7 +199,7 @@ export default function PayslipPreviewPage() {
                             </div>
                             <h3 className="text-2xl font-black text-slate-400 mb-2">Vista Previa Inactiva</h3>
                             <p className="text-slate-400 text-sm leading-relaxed font-medium">
-                                Seleccione un empleado en la barra superior para generar su boleta de pago con los cálculos legales automáticos.
+                                Seleccione un empleado o presione <span className="text-primary-600 font-bold">Generar Todos</span> para visualizar las boletas de pago.
                             </p>
                         </div>
                     )}

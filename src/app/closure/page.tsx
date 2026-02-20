@@ -10,8 +10,10 @@ import {
     ArrowRight,
     TrendingDown,
     TrendingUp,
-    Briefcase
+    Briefcase,
+    ArrowLeft
 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function MonthEndClosurePage() {
     const [isClosed, setIsClosed] = useState(false);
@@ -46,6 +48,10 @@ export default function MonthEndClosurePage() {
             <div className="max-w-6xl mx-auto">
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div>
+                        <Link href="/" className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-bold mb-2 transition-colors group">
+                            <ArrowLeft size={18} className="translate-x-0 group-hover:-translate-x-1 transition-transform" />
+                            <span>Volver al Dashboard</span>
+                        </Link>
                         <h1 className="text-3xl font-extrabold text-slate-900">Cierre de Mes: Febrero 2026</h1>
                         <p className="text-slate-500">Resumen operativo y contable de la planilla general.</p>
                     </div>

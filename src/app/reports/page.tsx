@@ -11,8 +11,10 @@ import {
     FileJson,
     CheckCircle2,
     AlertCircle,
-    RefreshCw
+    RefreshCw,
+    ArrowLeft
 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function ReportsPage() {
     const [loading, setLoading] = useState(false);
@@ -103,6 +105,10 @@ export default function ReportsPage() {
         <div className="min-h-screen bg-slate-50 p-8">
             <div className="max-w-4xl mx-auto">
                 <header className="mb-10 text-center md:text-left">
+                    <Link href="/" className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-bold mb-4 transition-colors group">
+                        <ArrowLeft size={18} className="translate-x-0 group-hover:-translate-x-1 transition-transform" />
+                        <span>Volver al Dashboard</span>
+                    </Link>
                     <h1 className="text-4xl font-black text-slate-900 flex items-center justify-center md:justify-start gap-4">
                         <FileSpreadsheet className="text-emerald-600 w-12 h-12" /> Central de Reportes
                     </h1>
