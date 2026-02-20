@@ -5,6 +5,7 @@ import { supabase, Employee } from '@/lib/supabase';
 import VariableEntryTable from '@/components/VariableEntryTable';
 import { CreditCard, ArrowLeft, CheckCircle2, Calculator, Loader2, Search } from 'lucide-react';
 import Link from 'next/link';
+import { ChangeEvent } from 'react';
 
 export default function PagosExtrasPage() {
     const [isSaved, setIsSaved] = useState(false);
@@ -63,11 +64,13 @@ export default function PagosExtrasPage() {
                     bonificacion_incentivo: 250, // Default base
                 };
 
-                // CRITICAL: Only include id if it's NOT null/undefined and is a valid string
-                // If we include { id: null } or { id: undefined }, Supabase/PostgreSQL 
-                // might try to literal insert NULL into the PK column instead of using the DEFAULT.
-                if (entry.id && typeof entry.id === 'string' && entry.id.length > 5) {
+                // Use existing ID or generate a new one if missing
+                // This bypasses issues where the DB might not have the default value correctly set
+                if (entry.id && typeof entry.id === 'string' && entry.id.length > 10) {
                     cleanEntry.id = entry.id;
+                } else {
+                    // Generate a UUID for new records
+                    cleanEntry.id = crypto.randomUUID();
                 }
 
                 return cleanEntry;
@@ -76,9 +79,7 @@ export default function PagosExtrasPage() {
             // Upsert by ID (default behavior for primary key)
             const { error } = await supabase
                 .from('payroll_entries')
-                .upsert(entriesToSave, {
-                    onConflict: 'employee_id' // Prefer employee_id conflict to handle 1-to-1 relationship correctly
-                });
+                .upsert(entriesToSave);
 
             if (error) throw error;
 
@@ -119,7 +120,7 @@ export default function PagosExtrasPage() {
                                 placeholder="Buscar colaborador..."
                                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                             />
                         </div>
                     </div>
@@ -147,9 +148,9 @@ export default function PagosExtrasPage() {
                         </div>
                     ) : (
                         <VariableEntryTable
-                            employees={employees.filter(emp =>
+                            employees={employees.filter((emp: Employee) =>
                                 `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                emp.dpi.includes(searchTerm)
+                                (emp.dpi && emp.dpi.includes(searchTerm))
                             )}
                             initialEntries={initialEntries}
                             onSave={handleSaveExtras}
