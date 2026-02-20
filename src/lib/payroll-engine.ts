@@ -22,6 +22,9 @@ export interface PayrollResults {
     grossSalary: number;
     igssLaboral: number;
     isrRetencion: number;
+    loans: number;
+    advances: number;
+    absenceDeduction: number;
     totalDeductions: number;
     netSalary: number;
     // Employer loads
@@ -103,6 +106,9 @@ export function calculatePayroll(input: PayrollInput): PayrollResults {
         grossSalary: salarySubjectToIGSS + GUATEMALA_CONSTANTS.BONIFICACION_INCENTIVO,
         igssLaboral,
         isrRetencion,
+        loans,
+        advances,
+        absenceDeduction,
         totalDeductions,
         netSalary,
         igssPatronal,

@@ -214,6 +214,7 @@ export default function PayrollGenerationPage() {
                                 <th className="px-6 py-4">Colaborador</th>
                                 <th className="px-6 py-4">Sueldo Base</th>
                                 <th className="px-6 py-4">Variables (C/H.E)</th>
+                                <th className="px-6 py-4">Descuentos</th>
                                 <th className="px-6 py-4 text-center">Bonif. Inc.</th>
                                 <th className="px-6 py-4 text-right">Total Líquido</th>
                                 <th className="px-6 py-4 text-center">Acciones</th>
@@ -262,6 +263,15 @@ export default function PayrollGenerationPage() {
                                                     <div className="flex flex-col text-xs gap-0.5">
                                                         <span className="text-slate-500">Com: Q{results.commissions.toFixed(2)}</span>
                                                         <span className="text-slate-500">H.E: Q{results.overtimePay.toFixed(2)}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col text-xs gap-0.5">
+                                                        <span className="text-rose-600 font-medium">IGSS: -Q{results.igssLaboral.toFixed(2)}</span>
+                                                        <span className="text-rose-600">Fal: -Q{results.absenceDeduction.toFixed(2)}</span>
+                                                        {(results.loans > 0 || results.advances > 0) && (
+                                                            <span className="text-amber-600">P/A: -Q{(results.loans + results.advances).toFixed(2)}</span>
+                                                        )}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
