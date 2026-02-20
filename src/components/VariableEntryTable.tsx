@@ -100,45 +100,53 @@ export default function VariableEntryTable({ employees, onSave, initialEntries =
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {employees.map((emp) => {
-                            const results = getResults(emp);
-                            const id = emp.id || '';
-                            return (
-                                <tr key={id} className="hover:bg-slate-50/50 transition-colors">
-                                    <td className="px-6 py-5">
-                                        <div className="font-bold text-slate-800">{emp.first_name} {emp.last_name}</div>
-                                        <div className="text-[10px] text-slate-400 font-mono uppercase">{emp.position}</div>
-                                    </td>
-                                    <td className="px-6 py-5 text-sm font-medium text-slate-500">
-                                        Q {emp.base_salary.toLocaleString()}
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <input
-                                            type="number"
-                                            value={entries[id]?.commissions || 0}
-                                            onChange={(e) => updateEntry(id, 'commissions', parseFloat(e.target.value) || 0)}
-                                            className="w-full bg-primary-50 border-primary-100 rounded-lg p-2 text-sm font-bold text-primary-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
-                                        />
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <input
-                                            type="number"
-                                            value={entries[id]?.overtimeHours || 0}
-                                            onChange={(e) => updateEntry(id, 'overtimeHours', parseFloat(e.target.value) || 0)}
-                                            className="w-full bg-primary-50 border-primary-100 rounded-lg p-2 text-sm font-bold text-primary-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
-                                        />
-                                    </td>
-                                    <td className="px-6 py-5 bg-slate-50/30">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs font-bold text-slate-400">Neto:</span>
-                                            <span className="font-mono font-black text-slate-900 text-lg">
-                                                Q {results.netSalary.toFixed(2)}
-                                            </span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })}
+                        {employees.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} className="px-6 py-10 text-center text-slate-500 italic">
+                                    No se encontraron colaboradores que coincidan con la búsqueda.
+                                </td>
+                            </tr>
+                        ) : (
+                            employees.map((emp) => {
+                                const results = getResults(emp);
+                                const id = emp.id || '';
+                                return (
+                                    <tr key={id} className="hover:bg-slate-50/50 transition-colors">
+                                        <td className="px-6 py-5">
+                                            <div className="font-bold text-slate-800">{emp.first_name} {emp.last_name}</div>
+                                            <div className="text-[10px] text-slate-400 font-mono uppercase">{emp.position}</div>
+                                        </td>
+                                        <td className="px-6 py-5 text-sm font-medium text-slate-500">
+                                            Q {emp.base_salary.toLocaleString()}
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <input
+                                                type="number"
+                                                value={entries[id]?.commissions || 0}
+                                                onChange={(e) => updateEntry(id, 'commissions', parseFloat(e.target.value) || 0)}
+                                                className="w-full bg-primary-50 border-primary-100 rounded-lg p-2 text-sm font-bold text-primary-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                                            />
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <input
+                                                type="number"
+                                                value={entries[id]?.overtimeHours || 0}
+                                                onChange={(e) => updateEntry(id, 'overtimeHours', parseFloat(e.target.value) || 0)}
+                                                className="w-full bg-primary-50 border-primary-100 rounded-lg p-2 text-sm font-bold text-primary-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                                            />
+                                        </td>
+                                        <td className="px-6 py-5 bg-slate-50/30">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-slate-400">Neto:</span>
+                                                <span className="font-mono font-black text-slate-900 text-lg">
+                                                    Q {results.netSalary.toFixed(2)}
+                                                </span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        )}
                     </tbody>
                 </table>
             </div>

@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { supabase, Employee } from '@/lib/supabase';
 import VariableEntryTable from '@/components/VariableEntryTable';
-import { CreditCard, ArrowLeft, CheckCircle2, Calculator, Loader2 } from 'lucide-react';
+import { CreditCard, ArrowLeft, CheckCircle2, Calculator, Loader2, Search } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PagosExtrasPage() {
     const [isSaved, setIsSaved] = useState(false);
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         fetchActiveEmployees();
@@ -106,6 +107,19 @@ export default function PagosExtrasPage() {
                         <p className="text-slate-500 mt-2 text-lg">Gestión de comisiones y horas extras del periodo.</p>
                     </div>
 
+                    <div className="flex flex-col md:flex-row gap-2 mt-4 md:mt-0">
+                        <div className="relative md:w-64">
+                            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Buscar colaborador..."
+                                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
                     {isSaved && (
                         <div className="bg-green-100 text-green-700 px-6 py-3 rounded-2xl flex items-center gap-2 animate-in fade-in zoom-in duration-300 font-bold border border-green-200 shadow-sm">
                             <CheckCircle2 size={20} />
@@ -129,7 +143,10 @@ export default function PagosExtrasPage() {
                         </div>
                     ) : (
                         <VariableEntryTable
-                            employees={employees}
+                            employees={employees.filter(emp =>
+                                `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                emp.dpi.includes(searchTerm)
+                            )}
                             initialEntries={initialEntries}
                             onSave={handleSaveExtras}
                         />

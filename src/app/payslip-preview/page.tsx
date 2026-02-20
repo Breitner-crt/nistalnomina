@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Payslip from '@/components/Payslip';
 import { calculatePayroll } from '@/lib/payroll-engine';
 import { supabase, Employee } from '@/lib/supabase';
-import { Printer, ArrowLeft, Mail, User, RefreshCw, AlertCircle } from 'lucide-react';
+import { Printer, ArrowLeft, Mail, User, RefreshCw, AlertCircle, Search } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PayslipPreviewPage() {
@@ -15,6 +15,7 @@ export default function PayslipPreviewPage() {
 
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
     const [results, setResults] = useState<any>(null);
+    const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
         fetchEmployees();
@@ -83,21 +84,40 @@ export default function PayslipPreviewPage() {
                             <ArrowLeft size={18} />
                         </Link>
 
-                        <div className="relative flex-1 md:w-64">
-                            <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <select
-                                className="w-full pl-10 pr-4 py-3 rounded-xl border-slate-200 bg-slate-50 font-bold text-sm focus:ring-2 focus:ring-primary-500 appearance-none cursor-pointer"
-                                value={selectedEmpId}
-                                onChange={(e) => handleEmployeeSelect(e.target.value)}
-                                disabled={loadingEmps}
-                            >
-                                <option value="">Seleccionar Colaborador...</option>
-                                {employees.map(emp => (
-                                    <option key={emp.id} value={emp.id}>
-                                        {emp.first_name} {emp.last_name}
-                                    </option>
-                                ))}
-                            </select>
+                        <div className="flex flex-col md:flex-row gap-2 flex-1 md:flex-none">
+                            <div className="relative md:w-64">
+                                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar colaborador..."
+                                    className="w-full pl-10 pr-4 py-3 rounded-xl border-slate-200 bg-slate-50 font-bold text-sm focus:ring-2 focus:ring-primary-500 shadow-sm"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="relative md:w-64">
+                                <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <select
+                                    className="w-full pl-10 pr-4 py-3 rounded-xl border-slate-200 bg-slate-50 font-bold text-sm focus:ring-2 focus:ring-primary-500 appearance-none cursor-pointer"
+                                    value={selectedEmpId}
+                                    onChange={(e) => handleEmployeeSelect(e.target.value)}
+                                    disabled={loadingEmps}
+                                >
+                                    <option value="">Seleccionar de la lista...</option>
+                                    {employees
+                                        .filter(emp =>
+                                            `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                            emp.dpi.includes(searchTerm)
+                                        )
+                                        .map(emp => (
+                                            <option key={emp.id} value={emp.id}>
+                                                {emp.first_name} {emp.last_name}
+                                            </option>
+                                        ))
+                                    }
+                                </select>
+                            </div>
                         </div>
                         {loadingEmps && <RefreshCw size={20} className="animate-spin text-primary-500" />}
                     </div>

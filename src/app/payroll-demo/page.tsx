@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { calculatePayroll, PayrollInput, PayrollResults } from "@/lib/payroll-engine";
 import { supabase, Employee } from "@/lib/supabase";
-import { Users, Calculator, Eye, ArrowLeft, RefreshCw, FileText } from "lucide-react";
+import { Users, Calculator, Eye, ArrowLeft, RefreshCw, FileText, Search } from "lucide-react";
 import Link from "next/link";
 
 export default function PayrollGenerationPage() {
@@ -11,6 +11,7 @@ export default function PayrollGenerationPage() {
     const [payrollEntries, setPayrollEntries] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedEmployeeResults, setSelectedEmployeeResults] = useState<{ emp: Employee, results: PayrollResults } | null>(null);
+    const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
         fetchData();
@@ -170,21 +171,33 @@ export default function PayrollGenerationPage() {
                     </h1>
                     <p className="text-slate-500 mt-1">Cálculo mensual basado en salarios base y variables de Supabase.</p>
                 </div>
-                <div className="flex gap-2">
-                    <button
-                        onClick={fetchData}
-                        className="p-2.5 text-slate-600 hover:text-primary-600 bg-white border border-slate-200 rounded-xl hover:bg-primary-50 transition-all shadow-sm"
-                        title="Actualizar Datos"
-                    >
-                        <RefreshCw size={20} />
-                    </button>
-                    <Link
-                        href="/reports"
-                        className="bg-primary-600 text-white px-5 py-2.5 rounded-xl hover:bg-primary-700 transition-all font-bold shadow-lg shadow-primary-200 flex items-center gap-2"
-                    >
-                        <FileText size={20} />
-                        Exportar Reporte
-                    </Link>
+                <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                    <div className="relative flex-1 md:w-64">
+                        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Buscar por nombre o DPI..."
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white shadow-sm"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={fetchData}
+                            className="p-2.5 text-slate-600 hover:text-primary-600 bg-white border border-slate-200 rounded-xl hover:bg-primary-50 transition-all shadow-sm flex-1 md:flex-none flex justify-center items-center"
+                            title="Actualizar Datos"
+                        >
+                            <RefreshCw size={20} />
+                        </button>
+                        <Link
+                            href="/reports"
+                            className="bg-primary-600 text-white px-5 py-2.5 rounded-xl hover:bg-primary-700 transition-all font-bold shadow-lg shadow-primary-200 flex items-center justify-center gap-2 flex-1 md:flex-none"
+                        >
+                            <FileText size={20} />
+                            Exportar
+                        </Link>
+                    </div>
                 </div>
             </div>
 
@@ -202,61 +215,71 @@ export default function PayrollGenerationPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {employees.length === 0 ? (
+                            {employees
+                                .filter(emp =>
+                                    `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    emp.dpi.includes(searchTerm)
+                                )
+                                .length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">
-                                        No hay empleados activos registrados.
+                                        {searchTerm ? 'No se encontraron resultados para su búsqueda.' : 'No hay empleados activos registrados.'}
                                     </td>
                                 </tr>
                             ) : (
-                                employees.map((emp) => {
-                                    const varData = getVariableData(emp.id!);
-                                    const results = calculatePayroll({
-                                        baseSalary: emp.base_salary,
-                                        overtimeHours: varData.overtime_hours || 0,
-                                        commissions: varData.commissions || 0,
-                                        bonuses: varData.other_bonuses || 0,
-                                        loans: varData.loans_deduction || 0,
-                                        advances: varData.advances_deduction || 0
-                                    });
+                                employees
+                                    .filter(emp =>
+                                        `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        emp.dpi.includes(searchTerm)
+                                    )
+                                    .map((emp) => {
+                                        const varData = getVariableData(emp.id!);
+                                        const results = calculatePayroll({
+                                            baseSalary: emp.base_salary,
+                                            overtimeHours: varData.overtime_hours || 0,
+                                            commissions: varData.commissions || 0,
+                                            bonuses: varData.other_bonuses || 0,
+                                            loans: varData.loans_deduction || 0,
+                                            advances: varData.advances_deduction || 0
+                                        });
 
-                                    return (
-                                        <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors group">
-                                            <td className="px-6 py-4">
-                                                <p className="font-bold text-slate-900">{emp.first_name} {emp.last_name}</p>
-                                                <p className="text-xs text-slate-500 uppercase tracking-wide">{emp.position}</p>
-                                            </td>
-                                            <td className="px-6 py-4 font-mono text-slate-600">
-                                                Q {emp.base_salary.toFixed(2)}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col text-xs gap-0.5">
-                                                    <span className="text-slate-500">Com: Q{results.commissions.toFixed(2)}</span>
-                                                    <span className="text-slate-500">H.E: Q{results.overtimePay.toFixed(2)}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <span className="bg-green-100 text-green-700 text-[10px] font-black px-2 py-1 rounded-full">
-                                                    Q 250.00
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <span className="font-black text-primary-700 font-mono text-lg">
-                                                    Q {results.netSalary.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <button
-                                                    onClick={() => handleViewDetail(emp)}
-                                                    className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
-                                                    title="Ver Detalle"
-                                                >
-                                                    <Eye size={20} />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
+                                        return (
+                                            <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors group">
+                                                <td className="px-6 py-4">
+                                                    <p className="font-bold text-slate-900">{emp.first_name} {emp.last_name}</p>
+                                                    <p className="text-xs text-slate-500 uppercase tracking-wide">{emp.position}</p>
+                                                </td>
+                                                <td className="px-6 py-4 font-mono text-slate-600">
+                                                    Q {emp.base_salary.toFixed(2)}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col text-xs gap-0.5">
+                                                        <span className="text-slate-500">Com: Q{results.commissions.toFixed(2)}</span>
+                                                        <span className="text-slate-500">H.E: Q{results.overtimePay.toFixed(2)}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <span className="bg-green-100 text-green-700 text-[10px] font-black px-2 py-1 rounded-full">
+                                                        Q 250.00
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <span className="font-black text-primary-700 font-mono text-lg">
+                                                        Q {results.netSalary.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <button
+                                                        onClick={() => handleViewDetail(emp)}
+                                                        className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
+                                                        title="Ver Detalle"
+                                                    >
+                                                        <Eye size={20} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                             )}
                         </tbody>
                     </table>
