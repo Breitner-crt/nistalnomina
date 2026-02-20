@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { calculateSeverance } from '@/lib/payroll-engine';
 import { supabase, Employee } from '@/lib/supabase';
-import { Calculator, Calendar, TrendingUp, AlertCircle, User, RefreshCw, ArrowLeft, Search } from 'lucide-react';
+import { Calculator, Calendar, TrendingUp, AlertCircle, User, RefreshCw, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function SeverancePage() {
@@ -19,7 +19,6 @@ export default function SeverancePage() {
     });
 
     const [result, setResult] = useState<any>(null);
-    const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
         fetchEmployees();
@@ -80,44 +79,25 @@ export default function SeverancePage() {
                             <h2 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
                                 <User className="text-primary-500 w-6 h-6" /> 1. Seleccionar Colaborador
                             </h2>
-                            <div className="space-y-4">
-                                <div className="relative">
-                                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                    <input
-                                        type="text"
-                                        placeholder="Buscar por nombre o DPI..."
-                                        className="block w-full pl-12 pr-4 py-4 rounded-2xl border-slate-200 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 border bg-slate-50 font-bold text-slate-700"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                    />
-                                </div>
-
-                                <div className="relative">
-                                    <select
-                                        className="block w-full px-4 py-4 rounded-2xl border-slate-200 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 border bg-slate-50 font-bold text-slate-700 appearance-none cursor-pointer"
-                                        value={selectedEmpId}
-                                        onChange={(e) => handleEmployeeSelect(e.target.value)}
-                                        disabled={loadingEmps}
-                                    >
-                                        <option value="">-- Seleccionar de la lista --</option>
-                                        {employees
-                                            .filter(emp =>
-                                                `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                                emp.dpi.includes(searchTerm)
-                                            )
-                                            .map(emp => (
-                                                <option key={emp.id} value={emp.id}>
-                                                    {emp.first_name} {emp.last_name}
-                                                </option>
-                                            ))
-                                        }
-                                    </select>
-                                    {loadingEmps && (
-                                        <div className="absolute right-10 top-1/2 -translate-y-1/2">
-                                            <RefreshCw size={20} className="animate-spin text-primary-500" />
-                                        </div>
-                                    )}
-                                </div>
+                            <div className="relative">
+                                <select
+                                    className="block w-full px-4 py-4 rounded-2xl border-slate-200 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 border bg-slate-50 font-bold text-slate-700 appearance-none cursor-pointer"
+                                    value={selectedEmpId}
+                                    onChange={(e) => handleEmployeeSelect(e.target.value)}
+                                    disabled={loadingEmps}
+                                >
+                                    <option value="">-- Seleccionar Empleado --</option>
+                                    {employees.map(emp => (
+                                        <option key={emp.id} value={emp.id}>
+                                            {emp.first_name} {emp.last_name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {loadingEmps && (
+                                    <div className="absolute right-10 top-1/2 -translate-y-1/2">
+                                        <RefreshCw size={20} className="animate-spin text-primary-500" />
+                                    </div>
+                                )}
                             </div>
                         </div>
 
