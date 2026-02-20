@@ -25,6 +25,7 @@ CREATE TABLE employees (
   position TEXT,
   contract_type TEXT, -- 'Indefinido', 'Temporal', etc.
   status TEXT DEFAULT 'Activo', -- 'Activo', 'Baja'
+  termination_date DATE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -58,6 +59,7 @@ CREATE TABLE payroll_entries (
   igss_patronal NUMERIC(10, 2), -- 10.67%
   irtra_patronal NUMERIC(10, 2), -- 1%
   intecap_patronal NUMERIC(10, 2), -- 1%
+  absences NUMERIC(5, 2) DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

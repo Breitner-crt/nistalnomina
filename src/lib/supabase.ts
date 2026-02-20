@@ -31,4 +31,5 @@ export interface Employee {
     position?: string;
     contract_type?: string;
     status?: 'Activo' | 'Baja';
+    termination_date?: string;
 }

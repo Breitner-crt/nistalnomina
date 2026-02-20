@@ -10,6 +10,7 @@ export interface PayrollInput {
     bonuses: number;
     loans: number;
     advances: number;
+    absences: number;
 }
 
 export interface PayrollResults {
@@ -63,15 +64,20 @@ export function calculateISR(monthlyTaxableIncome: number): number {
 }
 
 export function calculatePayroll(input: PayrollInput): PayrollResults {
-    const { baseSalary, overtimeHours, commissions, bonuses, loans, advances } = input;
+    const { baseSalary, overtimeHours, commissions, bonuses, loans, advances, absences } = input;
 
     // 1. Calculate Overtime (Base / 30 / 8 * 1.5 per hour)
-    const hourlyRate = baseSalary / 30 / 8;
+    const dailyRate = baseSalary / 30;
+    const hourlyRate = dailyRate / 8;
     const overtimePay = overtimeHours * hourlyRate * 1.5;
 
-    // 2. Gross Salary (Sujeto a IGSS)
+    // 2. Absence Deduction
+    const absenceDeduction = dailyRate * absences;
+    const baseSalaryEarned = baseSalary - absenceDeduction;
+
+    // 3. Gross Salary (Sujeto a IGSS)
     // Bonificación Incentivo is NOT subject to IGSS or ISR usually, but let's calculate IGSS first
-    const salarySubjectToIGSS = baseSalary + overtimePay + commissions + bonuses;
+    const salarySubjectToIGSS = baseSalaryEarned + overtimePay + commissions + bonuses;
 
     const igssLaboral = salarySubjectToIGSS * GUATEMALA_CONSTANTS.IGSS_LABORAL_RATE;
 
@@ -89,7 +95,7 @@ export function calculatePayroll(input: PayrollInput): PayrollResults {
     const intecap = salarySubjectToIGSS * GUATEMALA_CONSTANTS.INTECAP_RATE;
 
     return {
-        baseSalaryEarned: baseSalary,
+        baseSalaryEarned,
         overtimePay,
         bonificacionIncentivo: GUATEMALA_CONSTANTS.BONIFICACION_INCENTIVO,
         commissions,

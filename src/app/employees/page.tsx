@@ -71,7 +71,10 @@ export default function EmployeesPage() {
 
         const { error } = await supabase
             .from('employees')
-            .update({ status: 'Baja' })
+            .update({
+                status: 'Baja',
+                termination_date: new Date().toISOString().split('T')[0]
+            })
             .eq('id', id);
 
         if (error) {
@@ -195,7 +198,12 @@ export default function EmployeesPage() {
                                                 <tr key={emp.id} className="hover:bg-slate-50 transition-colors group">
                                                     <td className="px-6 py-4">
                                                         <div className="font-semibold text-slate-800">{emp.first_name} {emp.last_name}</div>
-                                                        <div className="text-xs text-slate-500">Ingreso: {emp.hiring_date}</div>
+                                                        <div className="text-[10px] text-slate-500 flex flex-col">
+                                                            <span>Ingreso: {emp.hiring_date}</span>
+                                                            {emp.status === 'Baja' && emp.termination_date && (
+                                                                <span className="text-rose-600 font-bold">Baja: {emp.termination_date}</span>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                     <td className="px-6 py-4 text-sm text-slate-600 font-mono italic">{emp.dpi}</td>
                                                     <td className="px-6 py-4 text-sm text-slate-600">{emp.position || 'N/A'}</td>

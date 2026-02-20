@@ -29,11 +29,11 @@ export default function HomePage() {
             color: "bg-primary-50"
         },
         {
-            title: "Pagos Extras",
-            description: "Ingreso masivo de comisiones y horas extras.",
-            href: "/extras",
-            icon: <CreditCard className="text-indigo-600" />,
-            color: "bg-indigo-50"
+            title: "Descuentos",
+            description: "Gestión de faltas y otras deducciones del periodo.",
+            href: "/discounts",
+            icon: <CreditCard className="text-rose-600" />,
+            color: "bg-rose-50"
         },
         {
             title: "Liquidaciones",
