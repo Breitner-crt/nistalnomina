@@ -13,6 +13,13 @@ export function exportToCSV(data: any[], filename: string) {
         ...data.map(row =>
             headers.map(header => {
                 let cell = row[header] === null || row[header] === undefined ? '' : row[header];
+
+                // Special handling for DPI or Afiliado to prevent scientific notation in Excel
+                const isIdField = header.toUpperCase().includes('DPI') || header.toUpperCase().includes('AFILIADO');
+                if (isIdField && cell !== '') {
+                    return `="${cell}"`;
+                }
+
                 // Handle strings with commas
                 if (typeof cell === 'string' && cell.includes(',')) {
                     cell = `"${cell}"`;
