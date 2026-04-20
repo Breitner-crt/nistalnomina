@@ -9,8 +9,11 @@ import {
     Lock,
     LayoutDashboard,
     ArrowRight,
-    CreditCard
+    CreditCard,
+    LogOut,
+    Building2
 } from 'lucide-react';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function HomePage() {
     const modules = [
@@ -72,20 +75,39 @@ export default function HomePage() {
         }
     ];
 
+    const { company, signOut, loading } = useAuth();
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <Loader2 className="animate-spin text-primary-600" size={48} />
+            </div>
+        );
+    }
+
     return (
         <main className="min-h-screen bg-slate-50 p-8 md:p-16">
             <div className="max-w-6xl mx-auto">
-                <header className="mb-16">
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="bg-primary-900 p-3 rounded-2xl">
-                            <span className="text-white font-black text-xl italic leading-none">N</span>
+                <header className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div>
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="bg-primary-900 p-3 rounded-2xl">
+                                <span className="text-white font-black text-xl italic leading-none">N</span>
+                            </div>
+                            <h1 className="text-4xl font-black text-slate-900 tracking-tight">NistalNomina</h1>
                         </div>
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight">NistalNomina</h1>
+                        <div className="flex items-center gap-2 text-slate-500 font-medium bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm w-fit">
+                            <Building2 size={18} className="text-primary-600" />
+                            <span>{company?.name || 'Cargando compañía...'}</span>
+                        </div>
                     </div>
-                    <p className="text-xl text-slate-500 max-w-2xl">
-                        Sistema inteligente de gestión de talento y planilla para el mercado guatemalteco.
-                        Seguro, automatizado y siempre alineado a la ley.
-                    </p>
+                    <button
+                        onClick={signOut}
+                        className="flex items-center gap-2 text-slate-500 hover:text-rose-600 font-bold transition-colors bg-white px-6 py-3 rounded-2xl border border-slate-200 shadow-sm group hover:border-rose-100 hover:bg-rose-50"
+                    >
+                        <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
+                        Cerrar Sesión
+                    </button>
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

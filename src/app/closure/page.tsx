@@ -11,12 +11,15 @@ import {
     TrendingDown,
     TrendingUp,
     Briefcase,
-    ArrowLeft
+    ArrowLeft,
+    Building2
 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function MonthEndClosurePage() {
     const [isClosed, setIsClosed] = useState(false);
+    const { company } = useAuth();
 
     // Simulated data for the current month
     const totals = {
@@ -53,7 +56,10 @@ export default function MonthEndClosurePage() {
                             <span>Volver al Dashboard</span>
                         </Link>
                         <h1 className="text-3xl font-extrabold text-slate-900">Cierre de Mes: Febrero 2026</h1>
-                        <p className="text-slate-500">Resumen operativo y contable de la planilla general.</p>
+                        <div className="flex items-center gap-2 text-slate-500 font-medium mt-1">
+                            <Building2 size={16} className="text-primary-600" />
+                            <span>{company?.name || 'Vincule una compañía'}</span>
+                        </div>
                     </div>
 
                     {!isClosed ? (

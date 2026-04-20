@@ -7,12 +7,14 @@ import { supabase, Employee } from '@/lib/supabase';
 import { Printer, ArrowLeft, Mail, User, Users, RefreshCw, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { ChangeEvent } from 'react';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function PayslipPreviewPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [selectedEmpId, setSelectedEmpId] = useState<string>("");
     const [loadingEmps, setLoadingEmps] = useState(true);
     const [loadingDetails, setLoadingDetails] = useState(false);
+    const { company, loading: authLoading } = useAuth();
 
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
     const [results, setResults] = useState<any>(null);
@@ -22,14 +24,18 @@ export default function PayslipPreviewPage() {
     const [batchData, setBatchData] = useState<{ emp: Employee, res: any }[]>([]);
 
     useEffect(() => {
-        fetchEmployees();
-    }, []);
+        if (!authLoading && company) {
+            fetchEmployees();
+        }
+    }, [authLoading, company]);
 
     const fetchEmployees = async () => {
+        if (!company) return;
         setLoadingEmps(true);
         const { data, error } = await supabase
             .from('employees')
             .select('*')
+            .eq('company_id', company.id)
             .eq('status', 'Activo')
             .order('first_name');
 
@@ -85,7 +91,8 @@ export default function PayslipPreviewPage() {
         // 1. Fetch all variables
         const { data: allEntries, error } = await supabase
             .from('payroll_entries')
-            .select('*');
+            .select('*, employees!inner(*)')
+            .eq('employees.company_id', company?.id);
 
         const entries = allEntries || [];
 
@@ -180,7 +187,7 @@ export default function PayslipPreviewPage() {
                                         employee={emp}
                                         results={res}
                                         period={`${new Date().toLocaleString('es-GT', { month: 'long' })} ${new Date().getFullYear()}`}
-                                        companyName="NistalNomina S.A."
+                                        companyName={company?.name || "NistalNomina"}
                                     />
                                 </div>
                             ))}
@@ -191,7 +198,7 @@ export default function PayslipPreviewPage() {
                                 employee={selectedEmployee}
                                 results={results}
                                 period={`${new Date().toLocaleString('es-GT', { month: 'long' })} ${new Date().getFullYear()}`}
-                                companyName="NistalNomina S.A."
+                                companyName={company?.name || "NistalNomina"}
                             />
                         </div>
                     ) : (

@@ -3,13 +3,15 @@
 import { useState, useEffect } from 'react';
 import { calculateSeverance } from '@/lib/payroll-engine';
 import { supabase, Employee } from '@/lib/supabase';
-import { Calculator, Calendar, TrendingUp, AlertCircle, User, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Calculator, Calendar, TrendingUp, AlertCircle, User, RefreshCw, ArrowLeft, Building2 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function SeverancePage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loadingEmps, setLoadingEmps] = useState(true);
     const [selectedEmpId, setSelectedEmpId] = useState<string>("");
+    const { company, loading: authLoading } = useAuth();
 
     const [data, setData] = useState({
         avgSalary: 5000,
@@ -21,14 +23,18 @@ export default function SeverancePage() {
     const [result, setResult] = useState<any>(null);
 
     useEffect(() => {
-        fetchEmployees();
-    }, []);
+        if (!authLoading && company) {
+            fetchEmployees();
+        }
+    }, [authLoading, company]);
 
     const fetchEmployees = async () => {
+        if (!company) return;
         setLoadingEmps(true);
         const { data: emps, error } = await supabase
             .from('employees')
             .select('*')
+            .eq('company_id', company.id)
             .order('first_name', { ascending: true });
 
         if (!error && emps) {
@@ -69,6 +75,11 @@ export default function SeverancePage() {
                     <h1 className="text-4xl font-black text-slate-900 flex items-center gap-3">
                         <Calculator className="text-primary-600 w-10 h-10" /> Liquidaciones Legales
                     </h1>
+                    <div className="flex items-center gap-2 text-slate-400 text-sm font-medium">
+                        <Building2 size={16} />
+                        <span>{company?.name}</span>
+                    </div>
+                </div>
                     <p className="text-slate-500 mt-2">Cálculo automatizado sincronizado con la base de datos de empleados.</p>
                 </header>
 

@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { calculatePayroll, PayrollInput, PayrollResults } from "@/lib/payroll-engine";
 import { supabase, Employee } from "@/lib/supabase";
-import { Users, Calculator, Eye, ArrowLeft, RefreshCw, FileText, Search } from "lucide-react";
+import { Users, Calculator, Eye, ArrowLeft, RefreshCw, FileText, Search, Building2 } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function PayrollGenerationPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
@@ -12,27 +13,33 @@ export default function PayrollGenerationPage() {
     const [loading, setLoading] = useState(true);
     const [selectedEmployeeResults, setSelectedEmployeeResults] = useState<{ emp: Employee, results: PayrollResults } | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const { company, loading: authLoading } = useAuth();
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        if (!authLoading && company) {
+            fetchData();
+        }
+    }, [authLoading, company]);
 
     const fetchData = async () => {
         setLoading(true);
         try {
-            // 1. Fetch active employees
+            if (!company) return;
+            // 1. Fetch active employees of this company
             const { data: empData, error: empError } = await supabase
                 .from('employees')
                 .select('*')
+                .eq('company_id', company.id)
                 .eq('status', 'Activo')
                 .order('first_name', { ascending: true });
 
             if (empError) throw empError;
 
-            // 2. Fetch variable entries
+            // 2. Fetch variable entries for this company's employees
             const { data: payrollData, error: payrollError } = await supabase
                 .from('payroll_entries')
-                .select('*');
+                .select('*, employees!inner(company_id)')
+                .eq('employees.company_id', company.id);
 
             if (payrollError) throw payrollError;
 
@@ -174,6 +181,11 @@ export default function PayrollGenerationPage() {
                         <Users className="text-primary-600" size={32} />
                         Planilla General
                     </h1>
+                    <div className="flex items-center gap-2 text-slate-400 text-sm font-medium">
+                        <Building2 size={16} />
+                        <span>{company?.name}</span>
+                    </div>
+                </div>
                     <p className="text-slate-500 mt-1">Cálculo mensual basado en salarios base y variables de Supabase.</p>
                 </div>
                 <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">

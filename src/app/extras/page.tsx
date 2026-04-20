@@ -6,33 +6,40 @@ import VariableEntryTable from '@/components/VariableEntryTable';
 import { CreditCard, ArrowLeft, CheckCircle2, Calculator, Loader2, Search } from 'lucide-react';
 import Link from 'next/link';
 import { ChangeEvent } from 'react';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function PagosExtrasPage() {
     const [isSaved, setIsSaved] = useState(false);
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const { company, loading: authLoading } = useAuth();
 
     useEffect(() => {
-        fetchActiveEmployees();
-    }, []);
+        if (!authLoading && company) {
+            fetchActiveEmployees();
+        }
+    }, [authLoading, company]);
 
     const fetchActiveEmployees = async () => {
         setLoading(true);
         try {
-            // Fetch active employees
+            if (!company) return;
+            // Fetch active employees of this company
             const { data: empData, error: empError } = await supabase
                 .from('employees')
                 .select('*')
+                .eq('company_id', company.id)
                 .eq('status', 'Activo')
                 .order('first_name', { ascending: true });
 
             if (empError) throw empError;
 
-            // Fetch existing payroll entries (variable data)
+            // Fetch existing payroll entries (variable data) for this company's employees
             const { data: payrollData, error: payrollError } = await supabase
                 .from('payroll_entries')
-                .select('id, employee_id, commissions, overtime_hours');
+                .select('*, employees!inner(company_id)')
+                .eq('employees.company_id', company.id);
 
             if (payrollError) throw payrollError;
 

@@ -15,24 +15,28 @@ import {
     ArrowLeft
 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function ReportsPage() {
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<string>("");
+    const { company } = useAuth();
 
     const getFullPayrollData = async () => {
-        // 1. Fetch active employees
+        // 1. Fetch active employees of this company
         const { data: employees, error: empError } = await supabase
             .from('employees')
             .select('*')
+            .eq('company_id', company?.id)
             .eq('status', 'Activo');
 
         if (empError) throw empError;
 
-        // 2. Fetch payroll entries (variables)
+        // 2. Fetch payroll entries (variables) for this company
         const { data: entries, error: entriesError } = await supabase
             .from('payroll_entries')
-            .select('*');
+            .select('*, employees!inner(company_id)')
+            .eq('employees.company_id', company?.id);
 
         if (entriesError) throw entriesError;
 

@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { Employee, supabase } from '@/lib/supabase';
 import EmployeeForm from '@/components/EmployeeForm';
-import { UserPlus, Users, List, Settings, Edit2, UserMinus, Loader2, Search, ArrowLeft } from 'lucide-react';
+import { UserPlus, Users, List, Settings, Edit2, UserMinus, Loader2, Search, ArrowLeft, Building2 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/components/AuthProvider';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,16 +15,21 @@ export default function EmployeesPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [editingEmployee, setEditingEmployee] = useState<Employee | undefined>(undefined);
     const [searchTerm, setSearchTerm] = useState('');
+    const { company, loading: authLoading } = useAuth();
 
     useEffect(() => {
-        fetchEmployees();
-    }, []);
+        if (!authLoading && company) {
+            fetchEmployees();
+        }
+    }, [authLoading, company]);
 
     const fetchEmployees = async () => {
+        if (!company) return;
         setLoading(true);
         const { data, error } = await supabase
             .from('employees')
             .select('*')
+            .eq('company_id', company.id)
             .order('first_name', { ascending: true });
 
         if (error) {
@@ -49,7 +55,7 @@ export default function EmployeesPage() {
 
         const { error } = await supabase
             .from('employees')
-            .upsert(cleanData);
+            .upsert({ ...cleanData, company_id: company?.id });
 
         if (error) {
             alert('Error al guardar: ' + error.message);
@@ -98,6 +104,11 @@ export default function EmployeesPage() {
                     <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
                         <Users className="text-primary-600" /> Gestión de Colaboradores
                     </h1>
+                    <div className="hidden md:flex items-center gap-2 text-slate-400 text-sm font-medium">
+                        <Building2 size={16} />
+                        <span>{company?.name}</span>
+                    </div>
+                </div>
 
                     <div className="flex items-center gap-3 w-full md:w-auto">
                         {view === 'list' && (

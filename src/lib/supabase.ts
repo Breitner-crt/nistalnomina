@@ -16,7 +16,20 @@ if (!isValidUrl(supabaseUrl) || !supabaseAnonKey) {
 
 export const supabase = createClient(finalUrl, finalKey);
 
-// Types based on schema.sql
+export interface Profile {
+    id: string;
+    company_id: string;
+    full_name?: string;
+    company?: Company;
+}
+
+export interface Company {
+    id: string;
+    name: string;
+    nit?: string;
+    address?: string;
+}
+
 export interface Employee {
     id?: string;
     company_id: string;

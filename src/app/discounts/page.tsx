@@ -6,6 +6,7 @@ import DiscountEntryTable from '@/components/DiscountEntryTable';
 import { CreditCard, ArrowLeft, CheckCircle2, Loader2, Search, MinusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { ChangeEvent } from 'react';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function DescuentosPage() {
     const [isSaved, setIsSaved] = useState(false);
@@ -13,17 +14,22 @@ export default function DescuentosPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [initialEntries, setInitialEntries] = useState<any[]>([]);
+    const { company, loading: authLoading } = useAuth();
 
     useEffect(() => {
-        fetchActiveEmployees();
-    }, []);
+        if (!authLoading && company) {
+            fetchActiveEmployees();
+        }
+    }, [authLoading, company]);
 
     const fetchActiveEmployees = async () => {
+        if (!company) return;
         setLoading(true);
         try {
             const { data: empData, error: empError } = await supabase
                 .from('employees')
                 .select('*')
+                .eq('company_id', company.id)
                 .eq('status', 'Activo')
                 .order('first_name', { ascending: true });
 
@@ -31,7 +37,8 @@ export default function DescuentosPage() {
 
             const { data: payrollData, error: payrollError } = await supabase
                 .from('payroll_entries')
-                .select('id, employee_id, absences');
+                .select('*, employees!inner(company_id)')
+                .eq('employees.company_id', company.id);
 
             if (payrollError) throw payrollError;
 
