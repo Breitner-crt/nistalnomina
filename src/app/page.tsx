@@ -15,6 +15,7 @@ import {
     Loader2
 } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
+import { useRouter } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,23 +80,19 @@ export default function HomePage() {
     ];
 
     const { company, signOut, loading, profile } = useAuth();
+    const router = useRouter();
 
-    // Añadir Panel Global si es superadmin
-    const finalModules = [...modules];
-    if (profile?.role === 'superadmin') {
-        finalModules.unshift({
-            title: "Panel Global",
-            description: "Gestión maestra de empresas y accesos de patronos.",
-            href: "/superadmin",
-            icon: <Lock className="text-red-600" />,
-            color: "bg-red-50"
-        });
-    }
+    useEffect(() => {
+        if (!loading && profile?.role === 'superadmin') {
+            router.push('/superadmin');
+        }
+    }, [loading, profile, router]);
 
-    if (loading) {
+    if (loading || (profile?.role === 'superadmin')) {
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
                 <Loader2 className="animate-spin text-primary-600" size={48} />
+                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Redirigiendo al panel correspondiente...</p>
             </div>
         );
     }
@@ -113,7 +110,7 @@ export default function HomePage() {
                         </div>
                         <div className="flex items-center gap-2 text-slate-500 font-medium bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm w-fit">
                             <Building2 size={18} className="text-primary-600" />
-                            <span>{company?.name || 'Cargando compañía...'}</span>
+                            <span>{company?.name || 'Administración de Empleado'}</span>
                         </div>
                     </div>
                     <button
@@ -126,7 +123,7 @@ export default function HomePage() {
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {finalModules.map((m, idx) => (
+                    {modules.map((m, idx) => (
                         <Link key={idx} href={m.href}>
                             <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all group h-full flex flex-col">
                                 <div className={`${m.color} w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>

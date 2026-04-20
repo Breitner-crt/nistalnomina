@@ -44,6 +44,8 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 DROP POLICY IF EXISTS "Users view own profile or superadmin all" ON public.profiles;
 DROP POLICY IF EXISTS "Users view own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Superadmin view all profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Users update own profile" ON public.profiles;
+
 CREATE POLICY "Users view own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Superadmin view all profiles" ON public.profiles FOR SELECT USING (is_superadmin());
 CREATE POLICY "Users update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);

@@ -19,8 +19,12 @@ export default function EmployeesPage() {
     const { company, loading: authLoading } = useAuth();
 
     useEffect(() => {
-        if (!authLoading && company) {
-            fetchEmployees();
+        if (!authLoading) {
+            if (company) {
+                fetchEmployees();
+            } else {
+                setLoading(false);
+            }
         }
     }, [authLoading, company]);
 

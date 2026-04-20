@@ -17,8 +17,12 @@ export default function DescuentosPage() {
     const { company, loading: authLoading } = useAuth();
 
     useEffect(() => {
-        if (!authLoading && company) {
-            fetchActiveEmployees();
+        if (!authLoading) {
+            if (company) {
+                fetchActiveEmployees();
+            } else {
+                setLoading(false);
+            }
         }
     }, [authLoading, company]);
 
