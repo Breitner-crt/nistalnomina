@@ -12,6 +12,7 @@ export const dynamic = 'force-dynamic';
 export default function EmployeesPage() {
     const [view, setView] = useState<'list' | 'add'>('list');
     const [loading, setLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [editingEmployee, setEditingEmployee] = useState<Employee | undefined>(undefined);
     const [searchTerm, setSearchTerm] = useState('');
@@ -26,44 +27,62 @@ export default function EmployeesPage() {
     const fetchEmployees = async () => {
         if (!company) return;
         setLoading(true);
-        const { data, error } = await supabase
-            .from('employees')
-            .select('*')
-            .eq('company_id', company.id)
-            .order('first_name', { ascending: true });
+        try {
+            const { data, error } = await supabase
+                .from('employees')
+                .select('*')
+                .eq('company_id', company.id)
+                .order('first_name', { ascending: true });
 
-        if (error) {
-            console.error('Error fetching employees:', error);
-        } else {
+            if (error) throw error;
             setEmployees(data || []);
+        } catch (err: any) {
+            console.error('Error fetching employees:', err);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     const handleSaveEmployee = async (empData: Employee) => {
-        // Clean data: Ensure UUID fields are valid or excluded
-        const { id, company_id, ...rest } = empData;
-        const cleanData: any = { ...rest };
+        if (isSaving) return;
+        setIsSaving(true);
 
-        if (id && id.length > 10) cleanData.id = id;
-        if (company_id && company_id.length > 10) cleanData.company_id = company_id;
+        try {
+            // Verificar sesión antes de guardar
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                alert('Tu sesión ha expirado. Por favor, refresca la página e inicia sesión de nuevo.');
+                setIsSaving(false);
+                return;
+            }
 
-        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-            alert('Error: No se detectaron las credenciales de Supabase. Asegúrate de configurar las variables de entorno en Vercel y hacer un "Redeploy".');
-            return;
-        }
+            // Limpiar datos
+            const { id, company_id, ...rest } = empData;
+            const cleanData: any = { ...rest };
+            if (id && id.length > 10) cleanData.id = id;
+            
+            // Forzar el company_id actual
+            cleanData.company_id = company?.id;
 
-        const { error } = await supabase
-            .from('employees')
-            .upsert({ ...cleanData, company_id: company?.id });
+            if (!cleanData.company_id) {
+                throw new Error('No se detectó la compañía activa. Por favor refresca la página.');
+            }
 
-        if (error) {
-            alert('Error al guardar: ' + error.message);
-        } else {
-            alert(id ? 'Empleado actualizado' : 'Empleado registrado');
+            const { error } = await supabase
+                .from('employees')
+                .upsert(cleanData);
+
+            if (error) throw error;
+
+            alert(id ? '✅ Empleado actualizado exitosamente' : '✅ Empleado registrado exitosamente');
             setView('list');
             setEditingEmployee(undefined);
             fetchEmployees();
+        } catch (err: any) {
+            console.error('Save Error:', err);
+            alert('❌ Error al guardar: ' + (err.message || 'Error de conexión'));
+        } finally {
+            setIsSaving(false);
         }
     };
 
