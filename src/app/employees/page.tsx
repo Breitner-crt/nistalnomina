@@ -108,7 +108,6 @@ export default function EmployeesPage() {
                         <Building2 size={16} />
                         <span>{company?.name}</span>
                     </div>
-                </div>
 
                     <div className="flex items-center gap-3 w-full md:w-auto">
                         {view === 'list' && (

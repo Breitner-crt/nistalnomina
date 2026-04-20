@@ -185,7 +185,6 @@ export default function PayrollGenerationPage() {
                         <Building2 size={16} />
                         <span>{company?.name}</span>
                     </div>
-                </div>
                     <p className="text-slate-500 mt-1">Cálculo mensual basado en salarios base y variables de Supabase.</p>
                 </div>
                 <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">

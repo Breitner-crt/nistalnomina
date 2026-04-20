@@ -79,7 +79,6 @@ export default function SeverancePage() {
                         <Building2 size={16} />
                         <span>{company?.name}</span>
                     </div>
-                </div>
                     <p className="text-slate-500 mt-2">Cálculo automatizado sincronizado con la base de datos de empleados.</p>
                 </header>
 
