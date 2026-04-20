@@ -78,7 +78,7 @@ export default function HomePage() {
         }
     ];
 
-    const { company, signOut, loading, profile } = useAuth();
+    const { company, signOut, loading, profile, user } = useAuth();
 
     // Añadir Panel Global si es superadmin
     const finalModules = [...modules];
@@ -152,7 +152,8 @@ export default function HomePage() {
                     {/* Bloque de Diagnóstico - Re-activado */}
                     <div className="mt-6 p-4 bg-slate-800 rounded-xl border border-slate-700 inline-block text-left shadow-2xl">
                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Diagnóstico de Acceso</p>
-                        <p className="text-xs text-white font-mono">UID: {profile?.id || 'No Profile'}</p>
+                        <p className="text-xs text-white font-mono">AUTH_ID: {user?.id || 'No Auth Session'}</p>
+                        <p className="text-xs text-white font-mono">PROF_ID: {profile?.id || 'No Profile'}</p>
                         <p className="text-xs text-white font-mono">ROLE: {profile?.role || 'No Role'}</p>
                     </div>
                 </footer>
