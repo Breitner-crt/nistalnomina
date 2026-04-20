@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { Lock, Mail, Loader2, ArrowRight } from 'lucide-react';
+import { Lock, User, Loader2, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
-    const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -17,13 +17,16 @@ export default function LoginPage() {
         setLoading(true);
         setError(null);
 
+        const emailSuffix = '@nistalnomina.com';
+        const finalEmail = username.includes('@') ? username : `${username}${emailSuffix}`;
+
         const { error } = await supabase.auth.signInWithPassword({
-            email,
+            email: finalEmail,
             password,
         });
 
         if (error) {
-            setError('Credenciales incorrectas. Por favor, verifica tu correo y contraseña.');
+            setError('Credenciales incorrectas. Verifica tu usuario y contraseña.');
             setLoading(false);
         } else {
             router.push('/');
@@ -44,16 +47,16 @@ export default function LoginPage() {
 
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-slate-700 ml-1" htmlFor="email">Correo Electrónico</label>
+                            <label className="text-sm font-bold text-slate-700 ml-1" htmlFor="username">Nombre de Usuario</label>
                             <div className="relative group">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-600 transition-colors" size={20} />
+                                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-600 transition-colors" size={20} />
                                 <input
-                                    id="email"
-                                    type="email"
-                                    placeholder="ejemplo@nistal.com"
+                                    id="username"
+                                    type="text"
+                                    placeholder="nombre_usuario"
                                     className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all font-medium"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
                                     required
                                 />
                             </div>
