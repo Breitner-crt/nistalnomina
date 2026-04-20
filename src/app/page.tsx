@@ -11,7 +11,8 @@ import {
     ArrowRight,
     CreditCard,
     LogOut,
-    Building2
+    Building2,
+    Loader2
 } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 
