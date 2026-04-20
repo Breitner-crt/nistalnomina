@@ -17,56 +17,70 @@ ALTER TABLE public.payroll_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.employee_documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- Nota: Estas políticas permiten que un usuario vea solo los datos de su compañía asignada.
--- El superadmin tiene acceso a todo.
+-- REFACTORIZACIÓN DE POLÍTICAS RLS PARA EVITAR RECURSIVIDAD
 
--- Perfiles: El usuario puede ver su propio perfil o el superadmin todos
-CREATE POLICY "Users view own profile or superadmin all" ON public.profiles
-  FOR SELECT USING (
-    auth.uid() = id OR 
-    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'superadmin'
+-- 1. Función auxiliar para verificar si el usuario es superadmin
+CREATE OR REPLACE FUNCTION public.is_superadmin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE id = auth.uid() AND role = 'superadmin'
   );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Compañías: Ver solo la compañía asignada o superadmin todas
-CREATE POLICY "Users view assigned or superadmin all" ON public.companies
-  FOR SELECT USING (
-    id IN (SELECT company_id FROM public.profiles WHERE id = auth.uid()) OR
-    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'superadmin'
-  );
+-- 2. Función auxiliar para obtener el company_id del usuario actual
+CREATE OR REPLACE FUNCTION public.get_my_company_id()
+RETURNS UUID AS $$
+BEGIN
+  RETURN (SELECT company_id FROM public.profiles WHERE id = auth.uid());
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Empleados: CRUD filtrado por compañía o superadmin
-CREATE POLICY "Users manage company employees or superadmin all" ON public.employees
+-- RE-APLICAR POLÍTICAS LIMPIAS
+
+-- Perfiles
+DROP POLICY IF EXISTS "Users view own profile or superadmin all" ON public.profiles;
+DROP POLICY IF EXISTS "Users view own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Superadmin view all profiles" ON public.profiles;
+CREATE POLICY "Users view own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Superadmin view all profiles" ON public.profiles FOR SELECT USING (is_superadmin());
+CREATE POLICY "Users update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+
+-- Compañías
+DROP POLICY IF EXISTS "Users view assigned or superadmin all" ON public.companies;
+DROP POLICY IF EXISTS "Users view assigned company" ON public.companies;
+CREATE POLICY "Users view assigned company" ON public.companies 
+  FOR SELECT USING (id = get_my_company_id() OR is_superadmin());
+
+-- Empleados
+DROP POLICY IF EXISTS "Users manage company employees or superadmin all" ON public.employees;
+DROP POLICY IF EXISTS "Users manage company employees" ON public.employees;
+CREATE POLICY "Users manage company employees" ON public.employees
+  FOR ALL USING (company_id = get_my_company_id() OR is_superadmin());
+
+-- Periodos
+DROP POLICY IF EXISTS "Users manage company periods or superadmin all" ON public.payroll_periods;
+DROP POLICY IF EXISTS "Users manage company periods" ON public.payroll_periods;
+CREATE POLICY "Users manage company periods" ON public.payroll_periods
+  FOR ALL USING (company_id = get_my_company_id() OR is_superadmin());
+
+-- Entradas de planilla
+DROP POLICY IF EXISTS "Users manage company entries or superadmin all" ON public.payroll_entries;
+DROP POLICY IF EXISTS "Users manage company entries" ON public.payroll_entries;
+CREATE POLICY "Users manage company entries" ON public.payroll_entries
   FOR ALL USING (
-    company_id IN (SELECT company_id FROM public.profiles WHERE id = auth.uid()) OR
-    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'superadmin'
+    is_superadmin() OR 
+    employee_id IN (SELECT id FROM public.employees WHERE company_id = get_my_company_id())
   );
 
--- Periodos: CRUD filtrado por compañía o superadmin
-CREATE POLICY "Users manage company periods or superadmin all" ON public.payroll_periods
-  FOR ALL USING (
-    company_id IN (SELECT company_id FROM public.profiles WHERE id = auth.uid()) OR
-    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'superadmin'
-  );
-
--- Entradas de planilla: CRUD filtrado por empleado o superadmin
-CREATE POLICY "Users manage company entries or superadmin all" ON public.payroll_entries
-  FOR ALL USING (
-    employee_id IN (
-      SELECT id FROM public.employees 
-      WHERE company_id IN (SELECT company_id FROM public.profiles WHERE id = auth.uid())
-    ) OR
-    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'superadmin'
-  );
-
--- 4. Crear una compañía inicial si no existe
+-- 4. Compañía por defecto
 INSERT INTO public.companies (name, nit, address)
 VALUES ('Compañía Demostrativa', '0000000-0', 'Ciudad de Guatemala')
 ON CONFLICT DO NOTHING;
 
--- 5. Asignar todos los empleados actuales a la primera compañía creada
+-- 5. Vincular empleados huérfanos
 UPDATE public.employees
 SET company_id = (SELECT id FROM public.companies LIMIT 1)
 WHERE company_id IS NULL;
-
--- 6. Trigger opcional para crear perfil automáticamente al registrarse (pero el usuario los creará manual)
--- Proporcionaremos una función para que el admin pueda facilitar esto si lo desea.

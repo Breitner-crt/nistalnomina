@@ -31,21 +31,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     useEffect(() => {
         const fetchProfile = async (sessionUser: User) => {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*, company:companies(*)')
-                .eq('id', sessionUser.id)
-                .single();
+            // Failsafe: if profile fetch takes too long, release loading state
+            const timeoutId = setTimeout(() => {
+                setLoading(false);
+                console.warn('Auth: Profile fetch timed out. Releasing loading state.');
+            }, 5000);
 
-            if (error) {
-                console.error('Error fetching profile:', error);
-                setProfile(null);
-                setCompany(null);
-            } else {
-                setProfile(data);
-                setCompany(data.company);
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*, company:companies(*)')
+                    .eq('id', sessionUser.id)
+                    .single();
+
+                if (error) {
+                    console.error('Error fetching profile:', error);
+                    setProfile(null);
+                    setCompany(null);
+                } else {
+                    setProfile(data);
+                    setCompany(data.company);
+                }
+            } catch (err) {
+                console.error('Fatal error in fetchProfile:', err);
+            } finally {
+                clearTimeout(timeoutId);
+                setLoading(false);
             }
-            setLoading(false);
         };
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(

@@ -60,6 +60,11 @@ export default function PagosExtrasPage() {
     const [initialEntries, setInitialEntries] = useState<any[]>([]);
 
     const handleSaveExtras = async (data: any[]) => {
+        if (!company) {
+            alert('No se detectó una compañía vinculada. Por favor, reinicie sesión.');
+            return;
+        }
+
         setLoading(true);
         try {
             // Prepare data for payroll_entries
@@ -67,12 +72,19 @@ export default function PagosExtrasPage() {
                 // Find existing data to preserve other fields (absences, etc.)
                 const existing = initialEntries.find(i => i.employee_id === entry.employeeId) || {};
 
+                // IMPORTANTE: Limpiar el objeto para que no tenga campos anidados (como employees) 
+                // que Supabase rechazaría al hacer upsert.
+                const { employees, ...cleanExisting } = existing;
+
                 const cleanEntry: any = {
-                    ...existing,
+                    ...cleanExisting,
                     employee_id: entry.employeeId,
                     commissions: Number(entry.commissions || 0),
                     overtime_hours: Number(entry.overtimeHours || 0),
                     bonificacion_incentivo: 250, // Default base
+                    // Asegurar que otros campos críticos no se pierdan
+                    absences: existing.absences || 0,
+                    other_bonuses: existing.other_bonuses || 0
                 };
 
                 if (!cleanEntry.id || typeof cleanEntry.id !== 'string' || cleanEntry.id.length < 10) {
@@ -83,22 +95,25 @@ export default function PagosExtrasPage() {
             });
 
             // Upsert by ID (default behavior for primary key)
-            const { error } = await supabase
+            const { error: upsertError } = await supabase
                 .from('payroll_entries')
                 .upsert(entriesToSave);
 
-            if (error) throw error;
+            if (upsertError) {
+                console.error('Supabase Upsert Error:', upsertError);
+                throw new Error(`Error en la base de datos: ${upsertError.message}`);
+            }
 
             setIsSaved(true);
             setTimeout(() => setIsSaved(false), 3000);
 
-            // Refresh data to get new record IDs for newly created rows
-            fetchActiveEmployees();
+            // Refresh data to get new record IDs for newly created rows and update state
+            await fetchActiveEmployees();
 
             alert('Datos de pagos extras guardados exitosamente');
         } catch (error: any) {
             console.error('Error saving extras:', error);
-            alert('Error al guardar: ' + error.message);
+            alert('Error al guardar: ' + (error.message || 'Error desconocido'));
         } finally {
             setLoading(false);
         }
