@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 
+export const dynamic = 'force-dynamic';
+
 export default function HomePage() {
     const modules = [
         {
