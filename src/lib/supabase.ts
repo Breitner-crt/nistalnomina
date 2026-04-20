@@ -20,6 +20,7 @@ export interface Profile {
     id: string;
     company_id: string;
     full_name?: string;
+    role: 'superadmin' | 'employer';
     company?: Company;
 }
 
@@ -46,3 +47,17 @@ export interface Employee {
     status?: 'Activo' | 'Baja';
     termination_date?: string;
 }
+
+// Cliente administrativo (SOLO PARA USO EN SERVER ACTIONS / API ROUTES)
+export const getSupabaseAdmin = () => {
+    const adminKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!adminKey) {
+        throw new Error('SUPABASE_SERVICE_ROLE_KEY is not defined in environment variables');
+    }
+    return createClient(finalUrl, adminKey, {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false
+        }
+    });
+};

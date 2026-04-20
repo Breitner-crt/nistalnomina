@@ -76,7 +76,19 @@ export default function HomePage() {
         }
     ];
 
-    const { company, signOut, loading } = useAuth();
+    const { company, signOut, loading, profile } = useAuth();
+
+    // Añadir Panel Global si es superadmin
+    const finalModules = [...modules];
+    if (profile?.role === 'superadmin') {
+        finalModules.unshift({
+            title: "Panel Global",
+            description: "Gestión maestra de empresas y accesos de patronos.",
+            href: "/superadmin",
+            icon: <Lock className="text-red-600" />,
+            color: "bg-red-50"
+        });
+    }
 
     if (loading) {
         return (
@@ -112,7 +124,7 @@ export default function HomePage() {
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {modules.map((m, idx) => (
+                    {finalModules.map((m, idx) => (
                         <Link key={idx} href={m.href}>
                             <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all group h-full flex flex-col">
                                 <div className={`${m.color} w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
