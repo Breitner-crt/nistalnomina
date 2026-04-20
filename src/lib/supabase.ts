@@ -50,11 +50,14 @@ export interface Employee {
 
 // Cliente administrativo (SOLO PARA USO EN SERVER ACTIONS / API ROUTES)
 export const getSupabaseAdmin = () => {
-    const adminKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!adminKey) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseServiceRoleKey) {
         throw new Error('SUPABASE_SERVICE_ROLE_KEY is not defined in environment variables');
     }
-    return createClient(finalUrl, adminKey, {
+
+    return createClient(supabaseUrl, supabaseServiceRoleKey, {
         auth: {
             autoRefreshToken: false,
             persistSession: false

@@ -78,7 +78,7 @@ export default function HomePage() {
         }
     ];
 
-    const { company, signOut, loading, profile, user } = useAuth();
+    const { company, signOut, loading, profile } = useAuth();
 
     // Añadir Panel Global si es superadmin
     const finalModules = [...modules];
@@ -109,7 +109,7 @@ export default function HomePage() {
                             <div className="bg-primary-900 p-3 rounded-2xl">
                                 <span className="text-white font-black text-xl italic leading-none">N</span>
                             </div>
-                            <h1 className="text-4xl font-black text-slate-900 tracking-tight">NistalNomina Pro</h1>
+                            <h1 className="text-4xl font-black text-slate-900 tracking-tight">NistalNomina</h1>
                         </div>
                         <div className="flex items-center gap-2 text-slate-500 font-medium bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm w-fit">
                             <Building2 size={18} className="text-primary-600" />
@@ -148,14 +148,6 @@ export default function HomePage() {
                     <p className="text-slate-400 text-sm font-medium">
                         © 2026 NistalNomina • Diseñado para la excelencia empresarial en Guatemala.
                     </p>
-
-                    {/* Bloque de Diagnóstico - Re-activado */}
-                    <div className="mt-6 p-4 bg-slate-800 rounded-xl border border-slate-700 inline-block text-left shadow-2xl">
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Diagnóstico de Acceso</p>
-                        <p className="text-xs text-white font-mono">AUTH_ID: {user?.id || 'No Auth Session'}</p>
-                        <p className="text-xs text-white font-mono">PROF_ID: {profile?.id || 'No Profile'}</p>
-                        <p className="text-xs text-white font-mono">ROLE: {profile?.role || 'No Role'}</p>
-                    </div>
                 </footer>
             </div>
         </main>
