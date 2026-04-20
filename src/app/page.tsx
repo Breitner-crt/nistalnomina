@@ -148,6 +148,13 @@ export default function HomePage() {
                     <p className="text-slate-400 text-sm font-medium">
                         © 2026 NistalNomina • Diseñado para la excelencia empresarial en Guatemala.
                     </p>
+                    
+                    {/* Bloque de Diagnóstico - Temporal */}
+                    <div className="mt-6 p-4 bg-slate-100 rounded-xl border border-slate-200 inline-block text-left">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Diagnóstico de Acceso</p>
+                        <p className="text-xs text-slate-500 font-mono">UID: {profile?.id || 'No Profile'}</p>
+                        <p className="text-xs text-slate-500 font-mono">ROLE: {profile?.role || 'No Role'}</p>
+                    </div>
                 </footer>
             </div>
         </main>
