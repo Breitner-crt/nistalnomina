@@ -109,7 +109,7 @@ export default function HomePage() {
                             <div className="bg-primary-900 p-3 rounded-2xl">
                                 <span className="text-white font-black text-xl italic leading-none">N</span>
                             </div>
-                            <h1 className="text-4xl font-black text-slate-900 tracking-tight">NistalNomina </h1>
+                            <h1 className="text-4xl font-black text-slate-900 tracking-tight">NistalNomina Pro</h1>
                         </div>
                         <div className="flex items-center gap-2 text-slate-500 font-medium bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm w-fit">
                             <Building2 size={18} className="text-primary-600" />
