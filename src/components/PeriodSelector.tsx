@@ -33,7 +33,13 @@ export default function PeriodSelector() {
             .eq('company_id', company.id)
             .order('start_date', { ascending: false });
         
-        if (data) setPeriods(data);
+        if (data && data.length > 0) {
+            setPeriods(data);
+            // If we have periods but none is active, pick the most recent one
+            if (!activePeriod) {
+                setActivePeriod(data[0]);
+            }
+        }
     };
 
     const handleCreatePeriod = async (e: React.FormEvent) => {
