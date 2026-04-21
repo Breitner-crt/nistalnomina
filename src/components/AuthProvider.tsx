@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
             try {
                 // LLAMADA SEGURA BYPASSING RLS
-                const { profile, company, error } = await fetchProfileSecurely(sessionUser.id);
+                const { profile, company, activePeriod, error } = await fetchProfileSecurely(sessionUser.id);
 
                 if (error) {
                     setAuthError(error);
@@ -60,51 +60,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     setAuthError(null);
                     setProfile(profile);
                     setCompany(company);
-                    
-                    if (company) {
-                        try {
-                            // Automatically fetch or create current month's period
-                            const currentYear = new Date().getFullYear();
-                            const currentMonth = new Date().getMonth();
-                            const defaultName = `Mes de ${new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(new Date())} ${currentYear}`;
-                            
-                            const startDate = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
-                            const endDate = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
-
-                            let { data: periods } = await supabase
-                                .from('payroll_periods')
-                                .select('*')
-                                .eq('company_id', company.id)
-                                .eq('name', defaultName)
-                                .limit(1);
-
-                            if (periods && periods.length > 0) {
-                                setActivePeriod(periods[0]);
-                            } else {
-                                // Create it
-                                const tempId = crypto.randomUUID();
-                                const newPeriod = {
-                                    id: tempId,
-                                    company_id: company.id,
-                                    name: defaultName,
-                                    start_date: startDate,
-                                    end_date: endDate,
-                                    status: 'open'
-                                };
-                                const { data: created, error: insertErr } = await supabase
-                                    .from('payroll_periods')
-                                    .insert([newPeriod])
-                                    .select()
-                                    .single();
-                                
-                                if (!insertErr && created) {
-                                    setActivePeriod(created);
-                                }
-                            }
-                        } catch (periodErr) {
-                            console.error('Error handling default period:', periodErr);
-                        }
-                    }
+                    setActivePeriod(activePeriod);
                 }
             } catch (err: any) {
                 console.error('Fatal error in fetchProfileSecurely:', err);
