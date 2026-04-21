@@ -13,17 +13,18 @@ export default function PagosExtrasPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const { company, loading: authLoading } = useAuth();
+    const [initialEntries, setInitialEntries] = useState<any[]>([]);
+    const { company, activePeriod, loading: authLoading } = useAuth();
 
     useEffect(() => {
         if (!authLoading) {
-            if (company) {
+            if (company && activePeriod) {
                 fetchActiveEmployees();
-            } else {
+            } else if (!company) {
                 setLoading(false);
             }
         }
-    }, [authLoading, company]);
+    }, [authLoading, company, activePeriod]);
 
     const fetchActiveEmployees = async () => {
         setLoading(true);
@@ -39,11 +40,12 @@ export default function PagosExtrasPage() {
 
             if (empError) throw empError;
 
-            // Fetch existing payroll entries (variable data) for this company's employees
+            // Fetch existing payroll entries (variable data) ONLY for the active period
             const { data: payrollData, error: payrollError } = await supabase
                 .from('payroll_entries')
                 .select('*, employees!inner(company_id)')
-                .eq('employees.company_id', company.id);
+                .eq('employees.company_id', company.id)
+                .eq('payroll_period_id', activePeriod!.id);
 
             if (payrollError) throw payrollError;
 
@@ -60,8 +62,6 @@ export default function PagosExtrasPage() {
         }
         setLoading(false);
     };
-
-    const [initialEntries, setInitialEntries] = useState<any[]>([]);
 
     const handleSaveExtras = async (data: any[]) => {
         if (!company) {
@@ -83,6 +83,7 @@ export default function PagosExtrasPage() {
                 const cleanEntry: any = {
                     ...cleanExisting,
                     employee_id: entry.employeeId,
+                    payroll_period_id: activePeriod!.id, // SPECIFIC TO THIS PERIOD
                     commissions: Number(entry.commissions || 0),
                     overtime_hours: Number(entry.overtimeHours || 0),
                     bonificacion_incentivo: 250, // Default base
@@ -134,7 +135,18 @@ export default function PagosExtrasPage() {
                         <h1 className="text-4xl font-black text-slate-900 flex items-center gap-3">
                             <CreditCard className="text-primary-600 w-10 h-10" /> Pagos Extras
                         </h1>
-                        <p className="text-slate-500 mt-2 text-lg">Gestión de comisiones y horas extras del periodo.</p>
+                        <p className="text-slate-500 mt-2 text-lg">
+                            {activePeriod ? (
+                                <>Gestión de comisiones para <span className="font-bold underline decoration-primary-500 decoration-2">{activePeriod.name}</span></>
+                            ) : (
+                                "Gestión de comisiones y horas extras del periodo."
+                            )}
+                        </p>
+                        {activePeriod?.status === 'closed' && (
+                            <div className="mt-4 px-4 py-2 bg-amber-100 text-amber-800 font-bold text-xs uppercase tracking-widest rounded-lg border border-amber-200 inline-block">
+                                🔒 PERÍODO CERRADO (Solo Lectura)
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex flex-col md:flex-row gap-2 mt-4 md:mt-0">
@@ -162,7 +174,7 @@ export default function PagosExtrasPage() {
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-slate-200 shadow-xl">
                             <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-4" />
-                            <p className="text-slate-500 font-medium italic">Cargando colaboradores activos...</p>
+                            <p className="text-slate-500 font-medium italic">Sincronizando {activePeriod?.name}...</p>
                         </div>
                     ) : employees.length === 0 ? (
                         <div className="bg-white rounded-2xl p-12 text-center border-2 border-dashed border-slate-200">
@@ -179,6 +191,7 @@ export default function PagosExtrasPage() {
                             )}
                             initialEntries={initialEntries}
                             onSave={handleSaveExtras}
+                            disabled={activePeriod?.status === 'closed'}
                         />
                     )}
                 </div>

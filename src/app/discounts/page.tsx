@@ -14,17 +14,17 @@ export default function DescuentosPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [initialEntries, setInitialEntries] = useState<any[]>([]);
-    const { company, loading: authLoading } = useAuth();
+    const { company, activePeriod, loading: authLoading } = useAuth();
 
     useEffect(() => {
         if (!authLoading) {
-            if (company) {
+            if (company && activePeriod) {
                 fetchActiveEmployees();
-            } else {
+            } else if (!company) {
                 setLoading(false);
             }
         }
-    }, [authLoading, company]);
+    }, [authLoading, company, activePeriod]);
 
     const fetchActiveEmployees = async () => {
         if (!company) return;
@@ -39,10 +39,12 @@ export default function DescuentosPage() {
 
             if (empError) throw empError;
 
+            // ⚠️ ONLY load entries for the current globally active period
             const { data: payrollData, error: payrollError } = await supabase
                 .from('payroll_entries')
                 .select('*, employees!inner(company_id)')
-                .eq('employees.company_id', company.id);
+                .eq('employees.company_id', company.id)
+                .eq('payroll_period_id', activePeriod!.id);
 
             if (payrollError) throw payrollError;
 
@@ -73,6 +75,7 @@ export default function DescuentosPage() {
                 const cleanEntry: any = {
                     ...cleanExisting,
                     employee_id: entry.employeeId,
+                    payroll_period_id: activePeriod!.id, // LINK TO THIS SPECIFIC MONTH
                     absences: Number(entry.absences || 0),
                     // Asegurar que otros campos críticos no se pierdan si venían de la base de datos
                     commissions: existing.commissions || 0,
@@ -123,7 +126,18 @@ export default function DescuentosPage() {
                         <h1 className="text-4xl font-black text-slate-900 flex items-center gap-3">
                             <MinusCircle className="text-rose-600 w-10 h-10" /> Descuentos y Faltas
                         </h1>
-                        <p className="text-slate-500 mt-2 text-lg">Control de inasistencias y deducciones salariales.</p>
+                        <p className="text-slate-500 mt-2 text-lg">
+                            {activePeriod ? (
+                                <>Gestión de inasistencias para <span className="font-bold underline decoration-rose-500 decoration-2">{activePeriod.name}</span></>
+                            ) : (
+                                "Control de inasistencias y deducciones salariales."
+                            )}
+                        </p>
+                        {activePeriod?.status === 'closed' && (
+                            <div className="mt-4 px-4 py-2 bg-amber-100 text-amber-800 font-bold text-xs uppercase tracking-widest rounded-lg border border-amber-200 inline-block">
+                                🔒 PERÍODO CERRADO (Solo Lectura)
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex flex-col md:flex-row gap-2 mt-4 md:mt-0">
@@ -151,7 +165,7 @@ export default function DescuentosPage() {
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-slate-200 shadow-xl">
                             <Loader2 className="w-12 h-12 text-rose-600 animate-spin mb-4" />
-                            <p className="text-slate-500 font-medium italic">Cargando colaboradores...</p>
+                            <p className="text-slate-500 font-medium italic">Sincronizando {activePeriod?.name}...</p>
                         </div>
                     ) : (
                         <DiscountEntryTable
@@ -160,6 +174,7 @@ export default function DescuentosPage() {
                             )}
                             initialEntries={initialEntries}
                             onSave={handleSaveDiscounts}
+                            disabled={activePeriod?.status === 'closed'}
                         />
                     )}
                 </div>

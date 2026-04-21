@@ -15,9 +15,10 @@ interface DiscountEntryTableProps {
     employees: Employee[];
     initialEntries?: any[];
     onSave: (data: DiscountEntry[]) => void;
+    disabled?: boolean;
 }
 
-export default function DiscountEntryTable({ employees, onSave, initialEntries = [] }: DiscountEntryTableProps) {
+export default function DiscountEntryTable({ employees, onSave, initialEntries = [], disabled = false }: DiscountEntryTableProps) {
     const [entries, setEntries] = useState<Record<string, DiscountEntry>>({});
 
     useEffect(() => {
@@ -71,13 +72,15 @@ export default function DiscountEntryTable({ employees, onSave, initialEntries =
                     <h2 className="text-xl font-bold text-slate-800">Carga de Descuentos</h2>
                     <p className="text-sm text-slate-500">Registre faltas y otros descuentos para el periodo actual.</p>
                 </div>
-                <button
-                    onClick={() => onSave(Object.values(entries))}
-                    className="flex items-center gap-2 bg-rose-600 text-white px-6 py-2.5 rounded-xl hover:bg-rose-700 transition-all font-bold shadow-lg shadow-rose-200"
-                >
-                    <Save size={18} />
-                    Guardar Cambios
-                </button>
+                {!disabled && (
+                    <button
+                        onClick={() => onSave(Object.values(entries))}
+                        className="flex items-center gap-2 bg-rose-600 text-white px-6 py-2.5 rounded-xl hover:bg-rose-700 transition-all font-bold shadow-lg shadow-rose-200"
+                    >
+                        <Save size={18} />
+                        Guardar Cambios
+                    </button>
+                )}
             </div>
 
             <div className="overflow-x-auto">
@@ -122,7 +125,10 @@ export default function DiscountEntryTable({ employees, onSave, initialEntries =
                                                     step="0.5"
                                                     value={entries[id]?.absences || 0}
                                                     onChange={(e) => updateEntry(id, 'absences', parseFloat(e.target.value) || 0)}
-                                                    className="w-full bg-rose-50 border-rose-100 rounded-lg p-2 text-sm font-bold text-rose-900 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none transition-all"
+                                                    disabled={disabled}
+                                                    className={`w-full bg-rose-50 border-rose-100 rounded-lg p-2 text-sm font-bold text-rose-900 outline-none transition-all ${
+                                                        disabled ? 'opacity-60 cursor-not-allowed' : 'focus:ring-2 focus:ring-rose-500 focus:border-transparent'
+                                                    }`}
                                                 />
                                             </div>
                                         </td>

@@ -17,9 +17,10 @@ interface VariableEntryTableProps {
     employees: Employee[];
     initialEntries?: any[]; // For pre-populating existing data
     onSave: (data: VariableEntry[]) => void;
+    disabled?: boolean;
 }
 
-export default function VariableEntryTable({ employees, onSave, initialEntries = [] }: VariableEntryTableProps) {
+export default function VariableEntryTable({ employees, onSave, initialEntries = [], disabled = false }: VariableEntryTableProps) {
     const [entries, setEntries] = useState<Record<string, VariableEntry>>({});
 
     // Initialize/Update entries when employees or initialEntries change
@@ -80,13 +81,15 @@ export default function VariableEntryTable({ employees, onSave, initialEntries =
                     <h2 className="text-xl font-bold text-slate-800">Carga de Pagos Extras</h2>
                     <p className="text-sm text-slate-500">Ingrese comisiones y horas extras para la planilla actual.</p>
                 </div>
-                <button
-                    onClick={() => onSave(Object.values(entries))}
-                    className="flex items-center gap-2 bg-primary-600 text-white px-6 py-2.5 rounded-xl hover:bg-primary-700 transition-all font-bold shadow-lg shadow-primary-200"
-                >
-                    <Save size={18} />
-                    Guardar Cambios
-                </button>
+                {!disabled && (
+                    <button
+                        onClick={() => onSave(Object.values(entries))}
+                        className="flex items-center gap-2 bg-primary-600 text-white px-6 py-2.5 rounded-xl hover:bg-primary-700 transition-all font-bold shadow-lg shadow-primary-200"
+                    >
+                        <Save size={18} />
+                        Guardar Cambios
+                    </button>
+                )}
             </div>
 
             <div className="overflow-x-auto">
@@ -125,7 +128,10 @@ export default function VariableEntryTable({ employees, onSave, initialEntries =
                                                 type="number"
                                                 value={entries[id]?.commissions || 0}
                                                 onChange={(e) => updateEntry(id, 'commissions', parseFloat(e.target.value) || 0)}
-                                                className="w-full bg-primary-50 border-primary-100 rounded-lg p-2 text-sm font-bold text-primary-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                                                disabled={disabled}
+                                                className={`w-full bg-primary-50 border-primary-100 rounded-lg p-2 text-sm font-bold text-primary-900 outline-none transition-all ${
+                                                    disabled ? 'opacity-60 cursor-not-allowed' : 'focus:ring-2 focus:ring-primary-500 focus:border-transparent'
+                                                }`}
                                             />
                                         </td>
                                         <td className="px-6 py-5">
@@ -134,7 +140,10 @@ export default function VariableEntryTable({ employees, onSave, initialEntries =
                                                     type="number"
                                                     value={entries[id]?.overtimeHours || 0}
                                                     onChange={(e) => updateEntry(id, 'overtimeHours', parseFloat(e.target.value) || 0)}
-                                                    className="w-20 bg-primary-50 border-primary-100 rounded-lg p-2 text-sm font-bold text-primary-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all text-center"
+                                                    disabled={disabled}
+                                                    className={`w-20 bg-primary-50 border-primary-100 rounded-lg p-2 text-sm font-bold text-primary-900 outline-none transition-all text-center ${
+                                                        disabled ? 'opacity-60 cursor-not-allowed' : 'focus:ring-2 focus:ring-primary-500 focus:border-transparent'
+                                                    }`}
                                                 />
                                                 <div className="flex flex-col min-w-[80px]">
                                                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Referencia</span>
