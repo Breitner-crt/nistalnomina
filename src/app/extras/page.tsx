@@ -27,35 +27,43 @@ export default function PagosExtrasPage() {
     }, [authLoading, company, activePeriod]);
 
     const fetchActiveEmployees = async () => {
+        if (!company || !activePeriod) return;
         setLoading(true);
         try {
-            if (!company) return;
-            // Fetch active employees of this company
+            // 1. Fetch ALL employees for this company to check historical tenure
             const { data: empData, error: empError } = await supabase
                 .from('employees')
                 .select('*')
                 .eq('company_id', company.id)
-                .eq('status', 'Activo')
                 .order('first_name', { ascending: true });
 
             if (empError) throw empError;
 
-            // Fetch existing payroll entries (variable data) ONLY for the active period
+            // ⚠️ FILTER BY TENURE: Employee must have been active DURING the activePeriod dates
+            const pStart = new Date(activePeriod.start_date);
+            const pEnd = new Date(activePeriod.end_date);
+
+            const tenureEmployees = (empData || []).filter(emp => {
+                const hire = new Date(emp.hiring_date);
+                const term = emp.termination_date ? new Date(emp.termination_date) : null;
+                
+                // Rule: Hired before period ends AND (Still employed OR Fired after period starts)
+                const wasHired = hire <= pEnd;
+                const wasNotTerminatedYet = !term || term >= pStart;
+                
+                return wasHired && wasNotTerminatedYet;
+            });
+
+            // 2. Fetch existing payroll entries (variable data) ONLY for the active period
             const { data: payrollData, error: payrollError } = await supabase
                 .from('payroll_entries')
                 .select('*, employees!inner(company_id)')
                 .eq('employees.company_id', company.id)
-                .eq('payroll_period_id', activePeriod!.id);
+                .eq('payroll_period_id', activePeriod.id);
 
             if (payrollError) throw payrollError;
 
-            // Map payroll data to employees if needed, 
-            // but VariableEntryTable now handles state internally.
-            // We'll pass the payroll data to the table for initial state.
-            setEmployees(empData || []);
-
-            // Note: We might need a way to pass initial entries to the table
-            // Let's store them in a state to pass as prop
+            setEmployees(tenureEmployees);
             setInitialEntries(payrollData || []);
         } catch (error) {
             console.error('Error fetching data:', error);

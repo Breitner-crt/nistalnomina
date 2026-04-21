@@ -45,22 +45,32 @@ export default function ClosurePage() {
         if (!company || !activePeriod) return;
         setLoading(true);
         try {
-            // 1. Get active employees
+            // 1. Get employees for this period (Historical Integrity)
             const { data: empData } = await supabase
                 .from('employees')
                 .select('*')
-                .eq('company_id', company.id)
-                .eq('status', 'Activo');
+                .eq('company_id', company.id);
+
+            const pStart = new Date(activePeriod.start_date);
+            const pEnd = new Date(activePeriod.end_date);
+
+            const tenureEmployees = (empData || []).filter(emp => {
+                const hire = new Date(emp.hiring_date);
+                const term = emp.termination_date ? new Date(emp.termination_date) : null;
+                
+                // Rule: Hired before period ends AND (Still employed OR Fired after period starts)
+                return hire <= pEnd && (!term || term >= pStart);
+            });
 
             // 2. Get payroll entries for the active period
             const { data: entries } = await supabase
                 .from('payroll_entries')
                 .select('*')
-                .in('employee_id', (empData || []).map((e: any) => e.id))
+                .in('employee_id', tenureEmployees.map((e: any) => e.id))
                 .eq('payroll_period_id', activePeriod.id);
 
             // 3. Build summary per employee
-            const summary: EmployeeSummary[] = (empData || []).map((emp: any) => {
+            const summary: EmployeeSummary[] = tenureEmployees.map((emp: any) => {
                 const entry = (entries || []).find((e: any) => e.employee_id === emp.id) || {};
                 const absences = Number(entry.absences || 0);
                 const commissions = Number(entry.commissions || 0);

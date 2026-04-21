@@ -27,28 +27,43 @@ export default function DescuentosPage() {
     }, [authLoading, company, activePeriod]);
 
     const fetchActiveEmployees = async () => {
-        if (!company) return;
+        if (!company || !activePeriod) return;
         setLoading(true);
         try {
+            // 1. Fetch ALL employees for this company to check historical tenure
             const { data: empData, error: empError } = await supabase
                 .from('employees')
                 .select('*')
                 .eq('company_id', company.id)
-                .eq('status', 'Activo')
                 .order('first_name', { ascending: true });
 
             if (empError) throw empError;
 
-            // ⚠️ ONLY load entries for the current globally active period
+            // ⚠️ FILTER BY TENURE: Employee must have been active DURING the activePeriod dates
+            const pStart = new Date(activePeriod.start_date);
+            const pEnd = new Date(activePeriod.end_date);
+
+            const tenureEmployees = (empData || []).filter(emp => {
+                const hire = new Date(emp.hiring_date);
+                const term = emp.termination_date ? new Date(emp.termination_date) : null;
+                
+                // Rule: Hired before period ends AND (Still employed OR Fired after period starts)
+                const wasHired = hire <= pEnd;
+                const wasNotTerminatedYet = !term || term >= pStart;
+                
+                return wasHired && wasNotTerminatedYet;
+            });
+
+            // 2. Fetch entries for the active period
             const { data: payrollData, error: payrollError } = await supabase
                 .from('payroll_entries')
                 .select('*, employees!inner(company_id)')
                 .eq('employees.company_id', company.id)
-                .eq('payroll_period_id', activePeriod!.id);
+                .eq('payroll_period_id', activePeriod.id);
 
             if (payrollError) throw payrollError;
 
-            setEmployees(empData || []);
+            setEmployees(tenureEmployees);
             setInitialEntries(payrollData || []);
         } catch (error) {
             console.error('Error fetching data:', error);
