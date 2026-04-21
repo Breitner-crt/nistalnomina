@@ -80,7 +80,7 @@ export default function HomePage() {
         }
     ];
 
-    const { company, signOut, loading, profile } = useAuth();
+    const { company, signOut, loading, profile, authError } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
@@ -118,13 +118,20 @@ export default function HomePage() {
                                 <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Panel de Control de Planilla</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 text-slate-600 font-bold bg-white px-6 py-3 rounded-2xl border border-slate-200 shadow-sm w-fit group hover:border-primary-200 transition-colors">
-                            <Building2 size={20} className="text-primary-600 group-hover:scale-110 transition-transform" />
-                            <span>{company?.name || 'Administración Central'}</span>
-                            {/* CAJA DE DEBUG PARA ENTENDER QUÉ ROL TIENE EN VERDAD */}
-                            <span className="ml-4 px-2 py-1 bg-red-100 text-red-800 text-[10px] rounded-full uppercase tracking-widest border border-red-200">
-                                Rol DB: {profile?.role || 'NINGUNO/ERROR DE DB'}
-                            </span>
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-3 text-slate-600 font-bold bg-white px-6 py-3 rounded-2xl border border-slate-200 shadow-sm w-fit group hover:border-primary-200 transition-colors">
+                                <Building2 size={20} className="text-primary-600 group-hover:scale-110 transition-transform" />
+                                <span>{company?.name || 'Administración Central'}</span>
+                                {/* CAJA DE DEBUG PARA ENTENDER QUÉ ROL TIENE EN VERDAD */}
+                                <span className="ml-4 px-2 py-1 bg-red-100 text-red-800 text-[10px] rounded-full uppercase tracking-widest border border-red-200">
+                                    Rol DB: {profile?.role || 'ERROR DE DB'}
+                                </span>
+                            </div>
+                            {authError && (
+                                <div className="text-xs font-bold text-red-600 bg-red-50 p-2 rounded-lg border border-red-200">
+                                    ❌ ERROR SUPABASE: {authError}
+                                </div>
+                            )}
                         </div>
                     </div>
                     <button
