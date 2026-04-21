@@ -127,11 +127,6 @@ export default function HomePage() {
                             
                             <PeriodSelector />
                         </div>
-                        {authError && (
-                            <div className="mt-4 text-xs font-bold text-red-600 bg-red-50 p-3 rounded-xl border border-red-200">
-                                ❌ ERROR CRÍTICO: {authError}
-                            </div>
-                        )}
                     </div>
                     <button
                         onClick={signOut}

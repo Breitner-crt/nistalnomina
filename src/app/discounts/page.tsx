@@ -20,7 +20,7 @@ export default function DescuentosPage() {
         if (!authLoading) {
             if (company && activePeriod) {
                 fetchActiveEmployees();
-            } else {
+            } else if (!company) {
                 setLoading(false);
             }
         }
@@ -165,15 +165,7 @@ export default function DescuentosPage() {
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-slate-200 shadow-xl">
                             <Loader2 className="w-12 h-12 text-rose-600 animate-spin mb-4" />
-                            <p className="text-slate-500 font-medium italic">Sincronizando {activePeriod?.name || 'datos'}...</p>
-                        </div>
-                    ) : !activePeriod ? (
-                        <div className="bg-red-50 border-2 border-dashed border-red-200 rounded-2xl p-12 text-center">
-                            <p className="text-red-600 font-bold mb-2">⚠ No hay un Período Activo seleccionado o hubo un error al crearlo.</p>
-                            <p className="text-slate-500 text-sm">Por favor, verifica el selector de períodos en el Dashboard o la configuración de tu plataforma.</p>
-                            <Link href="/" className="inline-block mt-4 text-rose-600 font-bold hover:underline">
-                                Volver al Dashboard
-                            </Link>
+                            <p className="text-slate-500 font-medium italic">Sincronizando {activePeriod?.name}...</p>
                         </div>
                     ) : (
                         <DiscountEntryTable
