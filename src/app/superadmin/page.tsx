@@ -20,7 +20,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function SuperAdminPage() {
-    const { profile, loading: authLoading } = useAuth();
+    const { profile, loading: authLoading, signOut } = useAuth();
     const router = useRouter();
     
     const [companies, setCompanies] = useState<any[]>([]);
@@ -93,24 +93,32 @@ export default function SuperAdminPage() {
             <div className="max-w-7xl mx-auto">
                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
                     <div>
-                        <Link href="/" className="inline-flex items-center gap-2 text-slate-500 hover:text-primary-400 font-bold mb-4 transition-colors group text-sm uppercase tracking-tighter">
-                            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                            Regresar
-                        </Link>
                         <h1 className="text-5xl font-black text-white flex items-center gap-4 tracking-tighter">
                             <ShieldCheck className="text-primary-500 w-12 h-12" /> Panel General
                         </h1>
                         <p className="text-slate-400 mt-2 text-lg">Control maestro de infraestructura multi-inquilino.</p>
                     </div>
 
-                    <div className="bg-slate-900/50 p-4 rounded-3xl border border-slate-800 flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-primary-500/20 flex items-center justify-center">
-                            <User className="text-primary-500" size={24} />
+                    <div className="flex items-center gap-6">
+                        <div className="bg-slate-900/50 p-4 rounded-3xl border border-slate-800 flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-primary-500/20 flex items-center justify-center">
+                                <User className="text-primary-500" size={24} />
+                            </div>
+                            <div>
+                                <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Super Usuario</p>
+                                <p className="font-bold text-white">{profile?.full_name}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Super Usuario</p>
-                            <p className="font-bold text-white">{profile?.full_name}</p>
-                        </div>
+                        
+                        <button
+                            onClick={async () => {
+                                await signOut();
+                            }}
+                            className="bg-red-500/10 hover:bg-red-500/20 text-red-500 p-4 rounded-2xl transition-colors border border-red-500/20 shadow-lg group flex items-center justify-center"
+                            title="Cerrar Sesión"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                        </button>
                     </div>
                 </header>
 
