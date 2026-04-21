@@ -54,11 +54,15 @@ export async function fetchProfileSecurely(userId: string) {
                         end_date: endDate,
                         status: 'open'
                     };
-                    const { data: created } = await supabase
+                    const { data: created, error: createError } = await supabase
                         .from('payroll_periods')
                         .insert([newPeriod])
                         .select()
                         .single();
+                    if (createError) {
+                        console.error('Server Action Create Period Error:', createError);
+                        return { profile: profileData, company: companyData, activePeriod: null, error: `Error creando período: ${createError.message}` };
+                    }
                     if (created) {
                         activePeriod = created;
                     }
