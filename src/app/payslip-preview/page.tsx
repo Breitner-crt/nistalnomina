@@ -14,7 +14,7 @@ export default function PayslipPreviewPage() {
     const [selectedEmpId, setSelectedEmpId] = useState<string>("");
     const [loadingEmps, setLoadingEmps] = useState(true);
     const [loadingDetails, setLoadingDetails] = useState(false);
-    const { company, loading: authLoading } = useAuth();
+    const { company, activePeriod, loading: authLoading } = useAuth();
 
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
     const [results, setResults] = useState<any>(null);
@@ -24,22 +24,34 @@ export default function PayslipPreviewPage() {
     const [batchData, setBatchData] = useState<{ emp: Employee, res: any }[]>([]);
 
     useEffect(() => {
-        if (!authLoading && company) {
+        if (!authLoading && company && activePeriod) {
             fetchEmployees();
         }
-    }, [authLoading, company]);
+    }, [authLoading, company, activePeriod]);
 
     const fetchEmployees = async () => {
-        if (!company) return;
+        if (!company || !activePeriod) return;
         setLoadingEmps(true);
         const { data, error } = await supabase
             .from('employees')
             .select('*')
             .eq('company_id', company.id)
-            .eq('status', 'Activo')
             .order('first_name');
 
-        if (!error && data) setEmployees(data);
+        if (!error && data) {
+            // Tenure filtering logic
+            const pStart = new Date(activePeriod.start_date);
+            const pEnd = new Date(activePeriod.end_date);
+            
+            const filtered = data.filter(emp => {
+                const hire = new Date(emp.hiring_date);
+                const term = emp.termination_date ? new Date(emp.termination_date) : null;
+                const wasHired = hire <= pEnd;
+                const wasNotTerminatedYet = !term || term >= pStart;
+                return wasHired && wasNotTerminatedYet;
+            });
+            setEmployees(filtered);
+        }
         setLoadingEmps(false);
     };
 
@@ -59,11 +71,12 @@ export default function PayslipPreviewPage() {
         setLoadingDetails(true);
         setSelectedEmployee(emp);
 
-        // Fetch variables
+        // Fetch variables for the active period
         const { data: entries, error } = await supabase
             .from('payroll_entries')
             .select('*')
             .eq('employee_id', id)
+            .eq('payroll_period_id', activePeriod?.id)
             .single();
 
         const varData = !error && entries ? entries : {};
@@ -88,11 +101,12 @@ export default function PayslipPreviewPage() {
         setSelectedEmployee(null);
         setResults(null);
 
-        // 1. Fetch all variables
+        // 1. Fetch all variables for this company and period
         const { data: allEntries, error } = await supabase
             .from('payroll_entries')
             .select('*, employees!inner(*)')
-            .eq('employees.company_id', company?.id);
+            .eq('employees.company_id', company?.id)
+            .eq('payroll_period_id', activePeriod?.id);
 
         const entries = allEntries || [];
 
@@ -186,7 +200,7 @@ export default function PayslipPreviewPage() {
                                     <Payslip
                                         employee={emp}
                                         results={res}
-                                        period={`${new Date().toLocaleString('es-GT', { month: 'long' })} ${new Date().getFullYear()}`}
+                                        period={activePeriod?.name || ""}
                                         companyName={company?.name || "NistalNomina"}
                                     />
                                 </div>
@@ -197,19 +211,33 @@ export default function PayslipPreviewPage() {
                             <Payslip
                                 employee={selectedEmployee}
                                 results={results}
-                                period={`${new Date().toLocaleString('es-GT', { month: 'long' })} ${new Date().getFullYear()}`}
+                                period={activePeriod?.name || ""}
                                 companyName={company?.name || "NistalNomina"}
                             />
                         </div>
                     ) : (
                         <div className="bg-white/50 border-4 border-dashed border-slate-200 rounded-[3rem] p-24 text-center max-w-lg mx-auto">
-                            <div className="bg-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
-                                <Printer size={32} className="text-slate-300" />
-                            </div>
-                            <h3 className="text-2xl font-black text-slate-400 mb-2">Vista Previa Inactiva</h3>
-                            <p className="text-slate-400 text-sm leading-relaxed font-medium">
-                                Seleccione un empleado o presione <span className="text-primary-600 font-bold">Generar Todos</span> para visualizar las boletas de pago.
-                            </p>
+                            {!activePeriod ? (
+                                <>
+                                    <div className="bg-amber-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl animate-pulse">
+                                        <AlertCircle size={32} className="text-amber-500" />
+                                    </div>
+                                    <h3 className="text-2xl font-black text-amber-600 mb-2">Falta Período</h3>
+                                    <p className="text-slate-500 text-sm leading-relaxed font-medium">
+                                        Debe seleccionar un <span className="font-bold">Período Activo</span> en el encabezado para poder visualizar los recibos de pago.
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="bg-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                                        <Printer size={32} className="text-slate-300" />
+                                    </div>
+                                    <h3 className="text-2xl font-black text-slate-400 mb-2">Vista Previa Inactiva</h3>
+                                    <p className="text-slate-400 text-sm leading-relaxed font-medium">
+                                        Seleccione un empleado o presione <span className="text-primary-600 font-bold">Generar Todos</span> para visualizar las boletas de pago de <span className="font-bold">{activePeriod.name}</span>.
+                                    </p>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>
