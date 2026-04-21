@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { fetchProfileSecurely } from '@/app/actions/auth';
 import { supabase, Profile, Company } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 
@@ -34,54 +35,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     useEffect(() => {
         const fetchProfile = async (sessionUser: User) => {
-            // Failsafe: if profile fetch takes too long, release loading state
+            // Este timeout de 10s previene que la app se quede en blanco, pero el Server Action
+            // ahora resolverá instantáneamente ya que escapa el RLS problemático.
             const timeoutId = setTimeout(() => {
                 setLoading(false);
-                setAuthError("Timeout conectando con DB");
-                console.warn('Auth: Profile fetch timed out. Releasing loading state.');
-            }, 5000);
+                setAuthError("Timeout en llamada a Server Action Secure");
+            }, 10000);
 
             try {
-                // 1. Fetch profile standalone
-                const { data: profileData, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', sessionUser.id)
-                    .single();
+                // LLAMADA SEGURA BYPASSING RLS
+                const { profile, company, error } = await fetchProfileSecurely(sessionUser.id);
 
-                if (profileError) {
-                    console.error('Error fetching profile:', profileError);
-                    setAuthError(`Profile API: ${profileError.message || JSON.stringify(profileError)}`);
+                if (error) {
+                    setAuthError(error);
                     setProfile(null);
                     setCompany(null);
-                    return;
-                }
-
-                setProfile(profileData);
-
-                // 2. Fetch company standalone if they have one
-                if (profileData && profileData.company_id) {
-                    const { data: companyData, error: companyError } = await supabase
-                        .from('companies')
-                        .select('*')
-                        .eq('id', profileData.company_id)
-                        .single();
-                        
-                    if (!companyError) {
-                        setCompany(companyData);
-                    } else {
-                        console.error('Company fetch error (ignored):', companyError);
-                        setCompany(null);
-                    }
                 } else {
-                    setCompany(null);
+                    setAuthError(null);
+                    setProfile(profile);
+                    setCompany(company);
                 }
-
-                setAuthError(null);
-
             } catch (err: any) {
-                console.error('Fatal error in fetchProfile:', err);
-                setAuthError(err.message || 'Error fatal');
+                console.error('Fatal error in fetchProfileSecurely:', err);
+                setAuthError(err.message || 'Error fatal llamando al servidor');
             } finally {
                 clearTimeout(timeoutId);
                 setLoading(false);
