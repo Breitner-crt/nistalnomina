@@ -90,7 +90,7 @@ export default function PeriodSelector() {
                         Período Activo
                     </span>
                     <span className="font-bold text-sm leading-tight mt-0.5">
-                        {activePeriod ? activePeriod.name : 'Cargando...'}
+                        {loading ? 'Sincronizando...' : activePeriod ? activePeriod.name : 'Sin Período'}
                     </span>
                 </div>
                 <ChevronDown size={16} className="ml-2 opacity-50" />
