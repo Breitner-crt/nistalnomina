@@ -17,6 +17,7 @@ export async function fetchProfileSecurely(userId: string) {
             return { profile: null, company: null, activePeriod: null, error: `Error DB Profile: ${profileError.message}` };
         }
 
+        let companyData = null;
         let activePeriod = null;
 
         if (profileData && profileData.company_id) {
