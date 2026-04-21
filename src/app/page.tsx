@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import {
     Users,
@@ -16,6 +16,7 @@ import {
     Loader2
 } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
+import PeriodSelector from '@/components/PeriodSelector';
 import { useRouter } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
@@ -107,8 +108,8 @@ export default function HomePage() {
     return (
         <main className="min-h-screen bg-slate-50 p-8 md:p-16">
             <div className="max-w-6xl mx-auto space-y-12">
-                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                    <div>
+                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-50">
+                    <div className="flex-1">
                         <div className="flex items-center gap-4 mb-4">
                             <div className="bg-primary-900 p-4 rounded-[1.5rem] shadow-lg">
                                 <span className="text-white font-black text-2xl italic leading-none">N</span>
@@ -118,32 +119,25 @@ export default function HomePage() {
                                 <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Panel de Control de Planilla</p>
                             </div>
                         </div>
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
                             <div className="flex items-center gap-3 text-slate-600 font-bold bg-white px-6 py-3 rounded-2xl border border-slate-200 shadow-sm w-fit group hover:border-primary-200 transition-colors">
                                 <Building2 size={20} className="text-primary-600 group-hover:scale-110 transition-transform" />
                                 <span>{company?.name || 'Administración Central'}</span>
-                                {/* CAJA DE DEBUG PARA ENTENDER QUÉ ROL TIENE EN VERDAD */}
-                                <span className="ml-4 px-2 py-1 bg-red-100 text-red-800 text-[10px] rounded-full uppercase tracking-widest border border-red-200">
-                                    Rol DB: {profile?.role || 'ERROR DE DB'}
-                                </span>
                             </div>
-                            {authError && (
-                                <div className="text-xs font-bold text-red-600 bg-red-50 p-2 rounded-lg border border-red-200">
-                                    ❌ ERROR SUPABASE: {authError}
-                                </div>
-                            )}
+                            
+                            <PeriodSelector />
                         </div>
                     </div>
                     <button
                         onClick={signOut}
-                        className="flex items-center gap-2 text-slate-500 hover:text-rose-600 font-bold transition-all bg-white px-8 py-4 rounded-2xl border border-slate-200 shadow-sm group hover:border-rose-100 hover:bg-rose-50 active:scale-95"
+                        className="flex items-center gap-2 text-slate-500 hover:text-rose-600 font-bold transition-all bg-white px-8 py-4 rounded-2xl border border-slate-200 shadow-sm group hover:border-rose-100 hover:bg-rose-50 active:scale-95 flex-shrink-0"
                     >
                         <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
                         Cerrar Sesión
                     </button>
                 </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative z-0">
                     {modules.map((m, idx) => (
                         <Link key={idx} href={m.href}>
                             <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-2xl hover:-translate-y-2 transition-all group h-full flex flex-col relative overflow-hidden">
@@ -171,4 +165,3 @@ export default function HomePage() {
         </main>
     );
 }
- 

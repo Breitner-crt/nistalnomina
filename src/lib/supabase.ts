@@ -48,6 +48,32 @@ export interface Employee {
     termination_date?: string;
 }
 
+export interface PayrollPeriod {
+    id: string;
+    company_id: string;
+    name: string;
+    start_date: string;
+    end_date: string;
+    status: 'open' | 'closed';
+    created_at?: string;
+    closed_at?: string;
+}
+
+export interface PayrollEntry {
+    id: string;
+    payroll_period_id: string;
+    employee_id: string;
+    base_salary: number;
+    absences: number;
+    overtime_hours: number;
+    commissions: number;
+    igss_deduction: number;
+    isr_deduction: number;
+    other_deductions: number;
+    net_salary: number;
+    status: string;
+}
+
 // Cliente administrativo (SOLO PARA USO EN SERVER ACTIONS / API ROUTES)
 export const getSupabaseAdmin = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
