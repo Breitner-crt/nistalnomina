@@ -66,7 +66,8 @@ export async function fetchProfileSecurely(userId: string) {
                             name: defaultName,
                             start_date: startDate,
                             end_date: endDate,
-                            status: 'open'
+                            status: 'open',
+                            period_type: 'Mensual'
                         };
                         const { data: created, error: insertErr } = await supabase
                             .from('payroll_periods')

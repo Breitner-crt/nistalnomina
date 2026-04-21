@@ -53,7 +53,8 @@ export default function PeriodSelector() {
                 name: newPeriodData.name,
                 start_date: newPeriodData.startDate,
                 end_date: newPeriodData.endDate,
-                status: 'open'
+                status: 'open',
+                period_type: 'Mensual'
             };
 
             const { data, error } = await supabase
