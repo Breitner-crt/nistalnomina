@@ -32,35 +32,67 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [company, setCompany] = useState<Company | null>(null);
-    const [activePeriod, setActivePeriod] = useState<PayrollPeriod | null>(null);
+    const [activePeriod, setActivePeriodState] = useState<PayrollPeriod | null>(null);
     const [loading, setLoading] = useState(true);
     const [authError, setAuthError] = useState<string | null>(null);
     const router = useRouter();
     const pathname = usePathname();
 
+    // Custom setter that persists to localStorage
+    const setActivePeriod = (period: PayrollPeriod | null) => {
+        setActivePeriodState(period);
+        if (period) {
+            localStorage.setItem('nistal_active_period', JSON.stringify(period));
+        } else {
+            localStorage.removeItem('nistal_active_period');
+        }
+    };
+
     useEffect(() => {
         const fetchProfile = async (sessionUser: User) => {
-            // Este timeout de 10s previene que la app se quede en blanco, pero el Server Action
-            // ahora resolverá instantáneamente ya que escapa el RLS problemático.
             const timeoutId = setTimeout(() => {
                 setLoading(false);
                 setAuthError("Timeout en llamada a Server Action Secure");
             }, 10000);
 
             try {
-                // LLAMADA SEGURA BYPASSING RLS
-                const { profile, company, activePeriod, error } = await fetchProfileSecurely(sessionUser.id);
+                const { profile, company, activePeriod: serverDefaultPeriod, error } = await fetchProfileSecurely(sessionUser.id);
 
                 if (error) {
                     setAuthError(error);
                     setProfile(null);
                     setCompany(null);
-                    setActivePeriod(null);
+                    setActivePeriodState(null);
                 } else {
                     setAuthError(null);
                     setProfile(profile);
                     setCompany(company);
-                    setActivePeriod(activePeriod);
+
+                    // --- PERSISTENCE LOGIC ---
+                    // 1. Try memory
+                    if (activePeriod) {
+                        // Keep current
+                    } 
+                    // 2. Try localStorage
+                    else {
+                        const stored = localStorage.getItem('nistal_active_period');
+                        if (stored) {
+                            try {
+                                const parsed = JSON.parse(stored);
+                                // Optional: Verify it belongs to the current company
+                                if (parsed && parsed.company_id === company?.id) {
+                                    setActivePeriodState(parsed);
+                                } else {
+                                    setActivePeriodState(serverDefaultPeriod);
+                                }
+                            } catch (e) {
+                                setActivePeriodState(serverDefaultPeriod);
+                            }
+                        } else {
+                            // 3. Fallback to server default
+                            setActivePeriodState(serverDefaultPeriod);
+                        }
+                    }
                 }
             } catch (err: any) {
                 console.error('Fatal error in fetchProfileSecurely:', err);
@@ -81,9 +113,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 } else {
                     setProfile(null);
                     setCompany(null);
-                    setActivePeriod(null);
+                    setActivePeriodState(null);
+                    localStorage.removeItem('nistal_active_period');
                     setLoading(false);
-                    if (pathname !== '/login') {
+                    if (window.location.pathname !== '/login') {
                         router.push('/login');
                     }
                 }
@@ -93,9 +126,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return () => {
             subscription.unsubscribe();
         };
-    }, [router, pathname]);
+        // REMOVED pathname from dependencies to prevent re-fetching and resetting period on every navigation
+    }, [router]);
 
     const signOut = async () => {
+        localStorage.removeItem('nistal_active_period');
         await supabase.auth.signOut();
         router.push('/login');
     };
