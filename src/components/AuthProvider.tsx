@@ -42,22 +42,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }, 5000);
 
             try {
-                const { data, error } = await supabase
+                // 1. Fetch profile standalone
+                const { data: profileData, error: profileError } = await supabase
                     .from('profiles')
-                    .select('*, company:companies(*)')
+                    .select('*')
                     .eq('id', sessionUser.id)
                     .single();
 
-                if (error) {
-                    console.error('Error fetching profile:', error);
-                    setAuthError(error.message || JSON.stringify(error));
+                if (profileError) {
+                    console.error('Error fetching profile:', profileError);
+                    setAuthError(`Profile API: ${profileError.message || JSON.stringify(profileError)}`);
                     setProfile(null);
                     setCompany(null);
-                } else {
-                    setAuthError(null);
-                    setProfile(data);
-                    setCompany(data.company);
+                    return;
                 }
+
+                setProfile(profileData);
+
+                // 2. Fetch company standalone if they have one
+                if (profileData && profileData.company_id) {
+                    const { data: companyData, error: companyError } = await supabase
+                        .from('companies')
+                        .select('*')
+                        .eq('id', profileData.company_id)
+                        .single();
+                        
+                    if (!companyError) {
+                        setCompany(companyData);
+                    } else {
+                        console.error('Company fetch error (ignored):', companyError);
+                        setCompany(null);
+                    }
+                } else {
+                    setCompany(null);
+                }
+
+                setAuthError(null);
+
             } catch (err: any) {
                 console.error('Fatal error in fetchProfile:', err);
                 setAuthError(err.message || 'Error fatal');
