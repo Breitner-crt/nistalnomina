@@ -80,7 +80,7 @@ export default function SuperAdminPage() {
         setSubmitting(false);
     };
 
-        const handleDeleteCompany = async (id: string, name: string) => {
+    const handleDeleteCompany = async (id: string, name: string) => {
         if (!confirm(`¿Estás seguro de que deseas eliminar permanentemente la empresa "${name}" y todo su acceso? Esta acción no se puede deshacer.`)) return;
         
         setLoadingData(true);
@@ -93,7 +93,6 @@ export default function SuperAdminPage() {
             setLoadingData(false);
         }
     };
-
 
     if (authLoading || loadingData) {
         return (
@@ -182,10 +181,17 @@ export default function SuperAdminPage() {
                                                 <td className="px-8 py-6 text-slate-400 font-medium">
                                                     {comp.profiles?.[0]?.full_name || 'Sin asignar'}
                                                 </td>
-                                                <td className="px-8 py-6">
+                                                <td className="px-8 py-6 flex items-center justify-between">
                                                     <span className="bg-emerald-500/10 text-emerald-500 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-emerald-500/20">
                                                         Activo
                                                     </span>
+                                                    <button 
+                                                        onClick={() => handleDeleteCompany(comp.id, comp.name)}
+                                                        className="text-slate-500 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-500/10"
+                                                        title="Eliminar Empresa"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))}
