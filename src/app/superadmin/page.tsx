@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
-import { createEmployerAccount, getAllCompanies } from '@/app/actions/admin';
+import { createEmployerAccount, getAllCompanies, deleteCompanyAccount } from '@/app/actions/admin';
 import { 
     ShieldCheck, 
     Building2, 
@@ -14,7 +14,8 @@ import {
     ArrowLeft,
     Users,
     Key,
-    User
+    User,
+    Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -78,6 +79,21 @@ export default function SuperAdminPage() {
         }
         setSubmitting(false);
     };
+
+        const handleDeleteCompany = async (id: string, name: string) => {
+        if (!confirm(`¿Estás seguro de que deseas eliminar permanentemente la empresa "${name}" y todo su acceso? Esta acción no se puede deshacer.`)) return;
+        
+        setLoadingData(true);
+        const result = await deleteCompanyAccount(id);
+        if (result.success) {
+            setMessage({ type: 'success', text: `Empresa "${name}" eliminada correctamente.` });
+            await fetchCompanies();
+        } else {
+            setMessage({ type: 'error', text: result.error || 'Error al eliminar la empresa. Asegúrate de que no tenga registros dependientes.' });
+            setLoadingData(false);
+        }
+    };
+
 
     if (authLoading || loadingData) {
         return (
