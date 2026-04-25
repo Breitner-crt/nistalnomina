@@ -8,7 +8,7 @@ export async function createEmployerAccount(formData: {
     nit: string;
     address: string;
     fullName: string;
-    username: string;
+    username: string; // This will be used as part of the email suffix
     password: string;
 }) {
     const supabaseAdmin = getSupabaseAdmin();
@@ -17,6 +17,7 @@ export async function createEmployerAccount(formData: {
     const email = cleanUsername.includes('@') ? cleanUsername : `${cleanUsername}${emailSuffix}`;
 
     try {
+        // 1. Crear la compañía
         const { data: company, error: companyError } = await supabaseAdmin
             .from('companies')
             .insert({
@@ -29,6 +30,7 @@ export async function createEmployerAccount(formData: {
 
         if (companyError) throw new Error(`Error creando compañía: ${companyError.message}`);
 
+        // 2. Crear el usuario en auth.users
         const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email: email,
             password: formData.password,
@@ -40,10 +42,12 @@ export async function createEmployerAccount(formData: {
         });
 
         if (authError) {
+            // Rollback company if auth fails
             await supabaseAdmin.from('companies').delete().eq('id', company.id);
             throw new Error(`Error creando usuario: ${authError.message}`);
         }
 
+        // 3. Crear el perfil vinculado
         const { error: profileError } = await supabaseAdmin
             .from('profiles')
             .upsert({
@@ -54,6 +58,8 @@ export async function createEmployerAccount(formData: {
             });
 
         if (profileError) {
+            // Harder to rollback auth user easily without complications, 
+            // but we should at least report it.
             throw new Error(`Error vinculando perfil: ${profileError.message}`);
         }
 
@@ -85,7 +91,7 @@ export async function deleteCompanyAccount(companyId: string) {
     const supabaseAdmin = getSupabaseAdmin();
 
     try {
-        // 1. Obtener ID del usuario en auth.users
+        // 1. Find the profile(s) associated to get the auth user ID
         const { data: profiles, error: profileError } = await supabaseAdmin
             .from('profiles')
             .select('id')
@@ -93,14 +99,15 @@ export async function deleteCompanyAccount(companyId: string) {
 
         if (profileError) throw new Error(`Error buscando perfiles: ${profileError.message}`);
 
-        // 2. Eliminar de autenticación (esto suele borrar el perfil automáticamente por cascada)
+        // 2. Delete users from auth.users (this should cascade to profiles usually, but we will be thorough)
         if (profiles && profiles.length > 0) {
             for (const profile of profiles) {
                 await supabaseAdmin.auth.admin.deleteUser(profile.id);
             }
         }
 
-        // 3. Eliminar empresa
+        // 3. Delete from companies (dependant data like employees must be deleted first if no ON DELETE CASCADE exists)
+        // Intento directo
         const { error: companyError } = await supabaseAdmin
             .from('companies')
             .delete()
@@ -114,8 +121,4 @@ export async function deleteCompanyAccount(companyId: string) {
         console.error('Admin Action Delete Error:', error);
         return { success: false, error: error.message };
     }
-}
-
-    }
-    return data;
 }
