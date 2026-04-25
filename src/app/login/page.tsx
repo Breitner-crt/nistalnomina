@@ -18,7 +18,8 @@ export default function LoginPage() {
         setError(null);
 
         const emailSuffix = '@nistalnomina.com';
-        const finalEmail = username.includes('@') ? username : `${username}${emailSuffix}`;
+        const cleanUsername = username.trim().toLowerCase();
+        const finalEmail = cleanUsername.includes('@') ? cleanUsername : `${cleanUsername}${emailSuffix}`;
 
         const { error } = await supabase.auth.signInWithPassword({
             email: finalEmail,
