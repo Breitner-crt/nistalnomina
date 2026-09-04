@@ -13,7 +13,8 @@ import {
     CreditCard,
     LogOut,
     Building2,
-    Loader2
+    Loader2,
+    Award
 } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import PeriodSelector from '@/components/PeriodSelector';
@@ -36,6 +37,13 @@ export default function HomePage() {
             href: "/payroll-demo",
             icon: <Calculator className="text-primary-600" />,
             color: "bg-primary-50"
+        },
+        {
+            title: "Aguinaldo y Bono 14",
+            description: "Cálculo e impresión de boletas oficiales (Dec. 76-78 y Dec. 42-92).",
+            href: "/bonus-payslip",
+            icon: <Award className="text-amber-600" />,
+            color: "bg-amber-50"
         },
         {
             title: "Descuentos",

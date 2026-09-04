@@ -175,3 +175,210 @@ export function calculateSeverance(
         totalLiquidacion
     };
 }
+
+/**
+ * Módulo de Prestaciones Anuales (Aguinaldo - Dec. 76-78 y Bono 14 - Dec. 42-92)
+ */
+export interface AnnualBonusInput {
+    bonusType: 'aguinaldo' | 'bono14';
+    baseSalary: number;
+    hiringDate: string | Date;
+    year: number; // Ej: 2025
+    paymentMode?: '100%' | '50%_primera' | '50%_segunda';
+    advances?: number;
+    judicialRetentions?: number;
+}
+
+export interface AnnualBonusCalculation {
+    bonusType: 'aguinaldo' | 'bono14';
+    bonusTitle: string;
+    decreeText: string;
+    periodStart: string; // YYYY-MM-DD
+    periodEnd: string;   // YYYY-MM-DD
+    periodLabel: string; // "01/12/2024 al 30/11/2025"
+    daysInPeriod: number;
+    daysWorked: number;
+    isProportional: boolean;
+    baseSalary: number;
+    fullAnnualBonus: number;
+    grossAmount: number;
+    advances: number;
+    judicialRetentions: number;
+    totalDeductions: number;
+    netAmount: number;
+    amountInWords: string;
+    paymentMode: '100%' | '50%_primera' | '50%_segunda';
+    paymentModeLabel: string;
+}
+
+/**
+ * Convierte un valor numérico a texto en Quetzales (para boleta legal)
+ */
+export function numberToQuetzalesWords(amount: number): string {
+    if (isNaN(amount) || amount < 0) return 'CERO QUETZALES CON 00/100';
+
+    const units = ['', 'UN', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE'];
+    const teens = ['DIEZ', 'ONCE', 'DOCE', 'TRECE', 'CATORCE', 'QUINCE', 'DIECISEIS', 'DIECISIETE', 'DIECIOCHO', 'DIECINUEVE'];
+    const tens = ['', 'DIEZ', 'VEINTE', 'TREINTA', 'CUARENTA', 'CINCUENTA', 'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA'];
+    const hundreds = ['', 'CIENTO', 'DOSCIENTOS', 'TRESCIENTOS', 'CUATROCIENTOS', 'QUINIENTOS', 'SEISCIENTOS', 'SETECIENTOS', 'OCHOCIENTOS', 'NOVECIENTOS'];
+
+    const intPart = Math.floor(amount);
+    const decimalPart = Math.round((amount - intPart) * 100);
+    const centsStr = decimalPart < 10 ? `0${decimalPart}` : `${decimalPart}`;
+
+    function convertGroup(n: number): string {
+        if (n === 0) return '';
+        if (n === 100) return 'CIEN';
+
+        let output = '';
+        const h = Math.floor(n / 100);
+        const t = Math.floor((n % 100) / 10);
+        const u = n % 10;
+
+        if (h > 0) output += hundreds[h] + ' ';
+
+        if (t === 1) {
+            output += teens[u] + ' ';
+        } else if (t === 2) {
+            if (u === 0) output += 'VEINTE ';
+            else output += 'VEINTI' + units[u] + ' ';
+        } else if (t > 2) {
+            output += tens[t];
+            if (u > 0) output += ' Y ' + units[u];
+            output += ' ';
+        } else if (u > 0) {
+            output += units[u] + ' ';
+        }
+
+        return output.trim();
+    }
+
+    if (intPart === 0) {
+        return `CERO QUETZALES CON ${centsStr}/100`;
+    }
+
+    let words = '';
+    const millions = Math.floor(intPart / 1000000);
+    const thousands = Math.floor((intPart % 1000000) / 1000);
+    const remainder = intPart % 1000;
+
+    if (millions > 0) {
+        if (millions === 1) words += 'UN MILLON ';
+        else words += convertGroup(millions) + ' MILLONES ';
+    }
+
+    if (thousands > 0) {
+        if (thousands === 1) words += 'MIL ';
+        else words += convertGroup(thousands) + ' MIL ';
+    }
+
+    if (remainder > 0) {
+        words += convertGroup(remainder) + ' ';
+    }
+
+    return `${words.trim()} QUETZALES CON ${centsStr}/100`;
+}
+
+/**
+ * Calcula Aguinaldo o Bono 14 conforme a las leyes laborales de Guatemala
+ */
+export function calculateAnnualBonus(input: AnnualBonusInput): AnnualBonusCalculation {
+    const {
+        bonusType,
+        baseSalary,
+        hiringDate,
+        year,
+        paymentMode = '100%',
+        advances = 0,
+        judicialRetentions = 0
+    } = input;
+
+    const hireDateObj = typeof hiringDate === 'string' ? new Date(hiringDate + 'T00:00:00') : new Date(hiringDate);
+
+    let periodStartObj: Date;
+    let periodEndObj: Date;
+    let bonusTitle: string;
+    let decreeText: string;
+
+    if (bonusType === 'aguinaldo') {
+        // Decreto 76-78: 1 de diciembre (año ant.) al 30 de noviembre (año act.)
+        periodStartObj = new Date(year - 1, 11, 1); // 1 dic año ant.
+        periodEndObj = new Date(year, 10, 30);      // 30 nov año act.
+        bonusTitle = 'AGUINALDO';
+        decreeText = 'Decreto 76-78 del Congreso de la República';
+    } else {
+        // Decreto 42-92: 1 de julio (año ant.) al 30 de junio (año act.)
+        periodStartObj = new Date(year - 1, 6, 1);  // 1 jul año ant.
+        periodEndObj = new Date(year, 5, 30);       // 30 jun año act.
+        bonusTitle = 'BONO 14';
+        decreeText = 'Decreto 42-92 del Congreso de la República';
+    }
+
+    // Días totales del período legal
+    const msInDay = 1000 * 60 * 60 * 24;
+    const daysInPeriod = Math.round((periodEndObj.getTime() - periodStartObj.getTime()) / msInDay) + 1;
+
+    // Días laborados por el colaborador
+    let daysWorked = 0;
+    let isProportional = false;
+
+    if (hireDateObj <= periodStartObj) {
+        // Antigüedad mayor al período: período completo
+        daysWorked = daysInPeriod;
+        isProportional = false;
+    } else if (hireDateObj > periodEndObj) {
+        // Ingresó después del cierre del período
+        daysWorked = 0;
+        isProportional = true;
+    } else {
+        // Ingresó durante el período: cálculo proporcional
+        daysWorked = Math.round((periodEndObj.getTime() - hireDateObj.getTime()) / msInDay) + 1;
+        isProportional = true;
+    }
+
+    // Monto 100% de la prestación
+    const fullAnnualBonus = daysWorked > 0 ? (baseSalary / daysInPeriod) * daysWorked : 0;
+
+    // Modalidad de pago (100% o 50% de Aguinaldo)
+    let grossAmount = fullAnnualBonus;
+    let paymentModeLabel = 'Pago 100% (Total)';
+
+    if (paymentMode === '50%_primera') {
+        grossAmount = fullAnnualBonus * 0.5;
+        paymentModeLabel = '50% Primera Entrega (Diciembre)';
+    } else if (paymentMode === '50%_segunda') {
+        grossAmount = fullAnnualBonus * 0.5;
+        paymentModeLabel = '50% Segunda Entrega (Enero)';
+    }
+
+    const totalDeductions = advances + judicialRetentions;
+    const netAmount = Math.max(0, grossAmount - totalDeductions);
+    const amountInWords = numberToQuetzalesWords(netAmount);
+
+    const pad = (n: number) => n < 10 ? `0${n}` : `${n}`;
+    const formatDate = (d: Date) => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+    const formatISO = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    return {
+        bonusType,
+        bonusTitle,
+        decreeText,
+        periodStart: formatISO(periodStartObj),
+        periodEnd: formatISO(periodEndObj),
+        periodLabel: `${formatDate(periodStartObj)} al ${formatDate(periodEndObj)}`,
+        daysInPeriod,
+        daysWorked,
+        isProportional,
+        baseSalary,
+        fullAnnualBonus: Number(fullAnnualBonus.toFixed(2)),
+        grossAmount: Number(grossAmount.toFixed(2)),
+        advances: Number(advances.toFixed(2)),
+        judicialRetentions: Number(judicialRetentions.toFixed(2)),
+        totalDeductions: Number(totalDeductions.toFixed(2)),
+        netAmount: Number(netAmount.toFixed(2)),
+        amountInWords,
+        paymentMode,
+        paymentModeLabel
+    };
+}
+
